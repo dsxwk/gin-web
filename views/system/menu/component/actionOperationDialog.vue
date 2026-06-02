@@ -252,7 +252,7 @@ const formData = computed(() => [
     type: 'select',
     col: 12,
     options: () => {
-      return state.roles.map(role => ({label: role.name, value: role.id}));
+      return Array.isArray(state?.roles) ? state.roles.map(role => ({label: role.name, value: role.id})) : [];
     },
     attrs: {
       placeholder: '请选择角色',

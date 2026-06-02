@@ -109,7 +109,7 @@ const state = reactive({
       },
       {key: 'roleMenus', colWidth: '100', width: '70', height: '40', title: '菜单角色', isCheck: true,
         render: (scope) => {
-          return scope.row?.menuRoles?.length > 0 ? scope.row?.menuRoles.map(item => item.name).join(',') : '';
+          return scope.row?.roleMenus?.length > 0 ? scope.row?.roleMenus.map(item => item.name).join(',') : '';
         }
       },
       {key: 'createdAt', colWidth: '120', title: '创建时间', type: 'text', isCheck: true},

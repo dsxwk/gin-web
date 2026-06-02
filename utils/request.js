@@ -7,11 +7,6 @@ const API_URL = import.meta.env.VITE_API_URL;
 // golang 测试地址
 // API_URL = 'http://127.0.0.1:8080/api/v1';
 
-const err = {
-    code : 0,
-    msg : ''
-};
-
 export default async function request(path, config = {}) {
     NextLoading.start();
 
@@ -33,9 +28,16 @@ export default async function request(path, config = {}) {
         // 401刷新token
         if (response.status === 401) {
             try {
-                await refreshToken();
+                const newToken = await refreshToken();
+                const newConfig = {
+                    ...config,
+                    headers: {
+                        ...config.headers,
+                        'token': newToken
+                    }
+                };
 
-                response = await fetch(API_URL + path, config);
+                response = await fetch(API_URL + path, newConfig);
 
                 try {
                     res = await response.json();

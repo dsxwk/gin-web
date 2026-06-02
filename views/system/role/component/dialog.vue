@@ -4,7 +4,7 @@
       <ConfigForm
           ref="dialogFormRef"
           v-model:model="state.ruleForm"
-          :form-config="getFormData()"
+          :form-config="getFormData"
           :rules="rules"
           :form-props="{
             labelWidth: '80px',
@@ -98,14 +98,19 @@ const openDialog = async (type, row) => {
     status: 1,
   };
   if (type === 'edit') {
-    const data = await detail(row.id);
-    Object.keys(state.ruleForm).forEach((key) => {
-      if (data.hasOwnProperty(key)) {
-        state.ruleForm[key] = data[key];
-      }
-    });
-    state.dialog.title = '修改角色';
-    state.dialog.submitTxt = '修 改';
+    try {
+      const data = await detail(row.id);
+      Object.keys(state.ruleForm).forEach((key) => {
+        if (data.hasOwnProperty(key)) {
+          state.ruleForm[key] = data[key];
+        }
+      });
+      state.dialog.title = '修改角色';
+      state.dialog.submitTxt = '修 改';
+    } catch (e) {
+      ElMessage.error('获取角色详情失败');
+      return;
+    }
   } else {
     state.dialog.title = '新增角色';
     state.dialog.submitTxt = '新 增';

@@ -214,7 +214,7 @@ const formData = ref([
     type: 'select',
     col: 12,
     options: () => {
-      return state.roles.map(role => ({label: role.name, value: role.id}));
+      return Array.isArray(state?.roles) ? state.roles.map(role => ({label: role.name, value: role.id})) : [];
     },
     attrs: {
       placeholder: '请选择角色',
@@ -336,20 +336,34 @@ const openDialog = async (type, row) => {
     btnPower: '', // 菜单类型为按钮时，权限标识
   };
   if (type === 'edit') {
-    const data = await detail(row.id);
-    Object.keys(state.ruleForm).forEach((key) => {
-      if (data.hasOwnProperty(key)) {
-        state.ruleForm[key] = data[key];
-      }
-    });
-    // 设置上级菜单默认选中
-    if (row.pid) {
-      state.ruleForm.menuSuperior = findMenuPathById(state.menuData, row.pid);
-    } else {
-      state.ruleForm.menuSuperior = [];
+    if (!row?.id) {
+      ElMessage.error('菜单数据无效');
+      return;
     }
-		state.dialog.title = '修改菜单';
-		state.dialog.submitTxt = '修 改';
+    try {
+      const data = await detail(row.id);
+      Object.keys(state.ruleForm).forEach((key) => {
+        if (data.hasOwnProperty(key)) {
+          state.ruleForm[key] = data[key];
+        }
+      });
+      state.ruleForm.isLink === 1 ? state.ruleForm.isLink = true : state.ruleForm.isLink = false;
+      state.ruleForm.meta.isHide === 1 ? state.ruleForm.meta.isHide = true : state.ruleForm.meta.isHide = false;
+      state.ruleForm.meta.isKeepAlive === 1 ? state.ruleForm.meta.isKeepAlive = true : state.ruleForm.meta.isKeepAlive = false;
+      state.ruleForm.meta.isAffix === 1 ? state.ruleForm.meta.isAffix = true : state.ruleForm.meta.isAffix = false;
+      state.ruleForm.meta.isIframe === 1 ? state.ruleForm.meta.isIframe = true : state.ruleForm.meta.isIframe = false;
+      // 设置上级菜单默认选中
+      if (row.pid) {
+        state.ruleForm.menuSuperior = findMenuPathById(state.menuData, row.pid);
+      } else {
+        state.ruleForm.menuSuperior = [];
+      }
+      state.dialog.title = '修改菜单';
+      state.dialog.submitTxt = '修 改';
+    } catch (e) {
+      ElMessage.error('获取菜单详情失败');
+      return;
+    }
 	} else {
 		state.dialog.title = '新增菜单';
 		state.dialog.submitTxt = '新 增';
@@ -380,7 +394,7 @@ const onSubmit = async () => {
     state.ruleForm.pid = 0; // 顶级菜单
   }
 
-  state.ruleForm.menuRoles = state.ruleForm.meta.roles?.map(roleId => {
+  state.ruleForm.roleMenus = state.ruleForm.meta.roles?.map(roleId => {
     const role = state.roles.find(r => r.id === roleId);
     return {
       menuId: props.row.id ?? 0,
@@ -388,6 +402,12 @@ const onSubmit = async () => {
       name: role ? role.name : ''
     };
   }) ?? [];
+
+  state.ruleForm.isLink === true ? state.ruleForm.isLink = 1 : state.ruleForm.isLink = 2;
+  state.ruleForm.meta.isHide === true ? state.ruleForm.meta.isHide = 1 : state.ruleForm.meta.isHide = 2;
+  state.ruleForm.meta.isKeepAlive === true ? state.ruleForm.meta.isKeepAlive = 1 : state.ruleForm.meta.isKeepAlive = 2;
+  state.ruleForm.meta.isAffix === true ? state.ruleForm.meta.isAffix = 1 : state.ruleForm.meta.isAffix = 2;
+  state.ruleForm.meta.isIframe === true ? state.ruleForm.meta.isIframe = 1 : state.ruleForm.meta.isIframe = 2;
 
   dialogFormRef.value.validate(async (valid) => {
     if (!valid) return;

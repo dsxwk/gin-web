@@ -163,7 +163,7 @@ const onTableDelRow = async (row) => {
 const getTableData = async (param) => {
   param.menuId = param.menuId ?? props.menuId;
   const data = await api.actionList(param);
-  state.tableData.data = data.data;
+  state.tableData.data = data.data?.list;
   state.tableData.config.loading = false;
 };
 // 暴露变量

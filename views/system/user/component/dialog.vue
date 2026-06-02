@@ -120,7 +120,7 @@ const getFormData = () => {
       label: '用户角色',
       prop: 'userRoles',
       type: 'select',
-      options: state.roles.map(role => ({label: role.name, value: role.id})),
+      options: Array.isArray(state?.roles) ? state.roles.map(role => ({label: role.name, value: role.id})) : [],
       attrs: {
         multiple: true,
         clearable: true,
@@ -213,14 +213,18 @@ const openDialog = async (type, row) => {
     userRoles: []
   };
   if (type === 'edit') {
-    const data = await detail(row.id);
-    Object.keys(state.ruleForm).forEach((key) => {
-      if (data.hasOwnProperty(key)) {
-        state.ruleForm[key] = data[key];
-      }
-    });
-    // 设置角色 ID 数组用于 select 默认选中
-    state.selectedRoleIds = row.userRoles?.map(item => item.roleId) || [];
+    try {
+      const data = await detail(row.id);
+      Object.keys(state.ruleForm).forEach((key) => {
+        if (data.hasOwnProperty(key)) {
+          state.ruleForm[key] = data[key];
+        }
+      });
+      state.selectedRoleIds = row.userRoles?.map(item => item.roleId) || [];
+    } catch (e) {
+      ElMessage.error('获取用户详情失败');
+      return;
+    }
     delete state.ruleForm['password'];
     state.dialog.title = '修改用户';
     state.dialog.submitTxt = '修 改';
@@ -276,13 +280,13 @@ const onSubmit = async () => {
 
 const getRoles = async () => {
   const data = await api.roleList({page: 1, pageSize: 10, notPage: true});
-  state.roles = data.data;
+  state.roles = data.data?.list;
 };
 // 详情
 const detail = async (id) => {
   const res = await api.detail({id: id});
   const data = res.data;
-  data.userRoles = data.userRoles.map(role => role.roleId);
+  data.userRoles = data.userRoles?.map(role => role.roleId) || [];
 
   return data;
 };
