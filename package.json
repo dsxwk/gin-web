@@ -1,6 +1,7 @@
 {
   "name": "gin-base",
   "private": true,
+  "node-version": "v26.2.0",
   "version": "2.0.0",
   "type": "module",
   "scripts": {

@@ -59,6 +59,7 @@ const state = reactive({
     isLink: false, // 是否为链接 1=是 2=否
     sort: 0, // 排序
     actionRoles: [], // 功能角色
+    status: 1, // 状态 1=启用 2=禁用
   },
   superiorData: [], // 父级选项
   dialog: {
@@ -282,12 +283,24 @@ const emit = defineEmits(['refresh']);
 const dialogFormRef = ref();
 // 打开弹窗
 const openDialog = async (type, row) => {
-  const actionRes = await api.actionList({menuId: props.menuId});
-  state.superiorData = actionRes.data?.map(item => ({
-    id: item.id,
-    label: item.label,
-    title: item.label
-  })); // 父级选项
+  try {
+    // 检查menuId是否存在
+    if (!props.menuId) {
+      state.superiorData = [];
+    } else {
+      const actionRes = await api.actionList({menuId: props.menuId});
+      const actionData = actionRes.data?.list || [];
+      state.superiorData = Array.isArray(actionData) ? actionData.map(item => ({
+        id: item.id,
+        label: item.label,
+        title: item.label
+      })) : []; // 父级选项
+    }
+  } catch (e) {
+    state.superiorData = [];
+    ElMessage.error('获取功能列表失败');
+  }
+
   state.ruleForm = {
     pid: 0, // 父级id
     superior: [], // 父级
@@ -304,17 +317,26 @@ const openDialog = async (type, row) => {
     actionRoles: [],
   };
   if (type === 'edit') {
-    const data = await detail(row.id);
-    Object.keys(state.ruleForm).forEach((key) => {
-      if (data.hasOwnProperty(key)) {
-        state.ruleForm[key] = data[key];
-      }
-    });
-    state.ruleForm.superior = [data.pid];
-    // 设置角色 ID 数组用于 select 默认选中
-    state.selectedRoleIds = state.ruleForm.actionRoles?.map(item => item.roleId) || [];
-    state.dialog.title = '修改功能';
-    state.dialog.submitTxt = '修 改';
+    if (!row?.id) {
+      ElMessage.error('功能数据无效');
+      return;
+    }
+    try {
+      const data = await detail(row.id);
+      Object.keys(state.ruleForm).forEach((key) => {
+        if (data.hasOwnProperty(key)) {
+          state.ruleForm[key] = data[key];
+        }
+      });
+      state.ruleForm.superior = [data.pid];
+      // 设置角色 ID 数组用于 select 默认选中
+      state.selectedRoleIds = state.ruleForm.actionRoles?.map(item => item.roleId) || [];
+      state.dialog.title = '修改功能';
+      state.dialog.submitTxt = '修 改';
+    } catch (e) {
+      ElMessage.error('获取功能详情失败');
+      return;
+    }
   } else {
     state.selectedRoleIds = [];
     state.dialog.title = '新增功能';
@@ -341,8 +363,8 @@ const onSubmit = async () => {
   state.ruleForm.actionRoles = state.ruleForm.actionRoles?.map(roleId => {
     const role = state.roles.find(r => r.id === roleId);
     return {
-      menuId: props.menuId ?? 0,
       roleId: roleId,
+      menuId: props.menuId ?? 0,
       name: role ? role.name : ''
     };
   }) ?? [];
@@ -376,13 +398,13 @@ const onSubmit = async () => {
 const detail = async (id) => {
   const res = await api.actionDetail({id: id, menuId: props.menuId});
   const data = res.data;
-  data.actionRoles = data.actionRoles.map(role => role.roleId);
+  data.actionRoles = Array.isArray(data.actionRoles) ? data.actionRoles.map(role => role.roleId) : [];
   return data;
 };
 // 获取角色
 const getRoles = async () => {
   const data = await api.roleList({page: 1, pageSize: 10, notPage: false});
-  state.roles = data.data;
+  state.roles = data.data?.list || [];
 };
 // 页面加载时
 onMounted(() => {

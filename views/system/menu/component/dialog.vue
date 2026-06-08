@@ -74,6 +74,7 @@ const state = reactive({
       roles: [], // 权限标识，取角色管理
     },
     btnPower: '', // 菜单类型为按钮时，权限标识
+    status: 1, // 状态 1:启用 2:禁用
   },
 	menuData: [], // 上级菜单数据
 	dialog: {
@@ -85,8 +86,8 @@ const state = reactive({
 });
 // 是否内嵌下拉改变
 const onSelectIframeChange = () => {
-  if (state.ruleForm.meta.isIframe) state.ruleForm.isLink = true;
-  else state.ruleForm.isLink = false;
+  if (state.ruleForm.meta.isIframe === 1) state.ruleForm.isLink = 1;
+  else state.ruleForm.isLink = 2;
 };
 const formData = ref([
   {
@@ -314,26 +315,35 @@ function findMenuByPath(data, path) {
 }
 // 打开弹窗
 const openDialog = async (type, row) => {
+  // 确保角色数据和菜单数据已加载
+  if (!state.roles || state.roles.length === 0) {
+    await getRoles();
+  }
+  if (!state.menuData || state.menuData.length === 0) {
+    state.menuData = getData(routesList.value);
+  }
+  
   state.ruleForm = {
     menuSuperior: [], // 上级菜单
     name: '', // 路由名称
     component: '', // 组件路径
     componentAlias: '', // 组件路径别名
-    isLink: false, // 是否外链
+    isLink: 2, // 是否外链 1=是 2=否
     sort: 0, // 菜单排序
     path: '', // 路由路径
     redirect: '', // 路由重定向，有子集 children 时
     meta: {
       title: '', // 菜单名称
       icon: '', // 菜单图标
-      isHide: false, // 是否隐藏
-      isKeepAlive: true, // 是否缓存
-      isAffix: false, // 是否固定
+      isHide: 2, // 是否隐藏 1=隐藏 2=不隐藏
+      isKeepAlive: 1, // 是否缓存 1=缓存 2=不缓存
+      isAffix: 2, // 是否固定 1=固定 2=不固定
       isLink: '', // 外链/内嵌时链接地址（http:xxx.com），开启外链条件，`1、isLink: 链接地址不为空`
-      isIframe: false, // 是否内嵌，开启条件，`1、isIframe:true 2、isLink：链接地址不为空`
+      isIframe: 2, // 是否内嵌 1=是 2=否，开启条件，`1、isIframe:true 2、isLink：链接地址不为空`
       roles: [], // 权限标识，取角色管理
     },
     btnPower: '', // 菜单类型为按钮时，权限标识
+    status: 1, // 状态 1:启用 2:停用
   };
   if (type === 'edit') {
     if (!row?.id) {
@@ -347,16 +357,19 @@ const openDialog = async (type, row) => {
           state.ruleForm[key] = data[key];
         }
       });
-      state.ruleForm.isLink === 1 ? state.ruleForm.isLink = true : state.ruleForm.isLink = false;
-      state.ruleForm.meta.isHide === 1 ? state.ruleForm.meta.isHide = true : state.ruleForm.meta.isHide = false;
-      state.ruleForm.meta.isKeepAlive === 1 ? state.ruleForm.meta.isKeepAlive = true : state.ruleForm.meta.isKeepAlive = false;
-      state.ruleForm.meta.isAffix === 1 ? state.ruleForm.meta.isAffix = true : state.ruleForm.meta.isAffix = false;
-      state.ruleForm.meta.isIframe === 1 ? state.ruleForm.meta.isIframe = true : state.ruleForm.meta.isIframe = false;
       // 设置上级菜单默认选中
       if (row.pid) {
         state.ruleForm.menuSuperior = findMenuPathById(state.menuData, row.pid);
       } else {
         state.ruleForm.menuSuperior = [];
+      }
+      // 处理角色数据，转换为 ID 数组
+      if (data.roleMenus) {
+        state.ruleForm.meta.roles = Array.isArray(data.roleMenus) 
+          ? data.roleMenus.map(role => role.roleId || role.id || role) 
+          : [];
+      } else {
+        state.ruleForm.meta.roles = [];
       }
       state.dialog.title = '修改菜单';
       state.dialog.submitTxt = '修 改';
@@ -430,7 +443,7 @@ const onSubmit = async () => {
 // 获取角色
 const getRoles = async () => {
   const data = await api.roleList({page:1, pageSize: 10, notPage: false});
-  state.roles = data.data;
+  state.roles = data.data?.list || [];
 };
 // 详情
 const detail = async (id) => {

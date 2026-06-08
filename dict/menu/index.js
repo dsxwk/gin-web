@@ -1,19 +1,19 @@
 /**
  * 是否外链
- * @type {[{label: string, value: boolean},{label: string, value: boolean}]}
+ * @type {[{label: string, value: number},{label: string, value: number}]}
  */
 export const isLinkDict = [
-    { label: '是', value: true },
-    { label: '否', value: false }
+    { label: '是', value: 1 },
+    { label: '否', value: 2 }
 ];
 
 /**
  * 是否隐藏
- * @type {[{label: string, value: boolean},{label: string, value: boolean}]}
+ * @type {[{label: string, value: number},{label: string, value: number}]}
  */
 export const isHideDict = [
-    { label: '隐藏', value: true },
-    { label: '不隐藏', value: false }
+    { label: '隐藏', value: 1 },
+    { label: '不隐藏', value: 2 }
 ];
 
 /**
@@ -21,8 +21,8 @@ export const isHideDict = [
  * @type {[{label: string, value: number},{label: string, value: number}]}
  */
 export const actionIsLinkEnum = [
-    { label: '是', value: true },
-    { label: '否', value: false }
+    { label: '是', value: 1 },
+    { label: '否', value: 2 }
 ];
 
 /**
@@ -36,29 +36,29 @@ export const actionTypeDict = [
 
 /**
  * 页面缓存
- * @type {[{label: string, value: boolean},{label: string, value: boolean}]}
+ * @type {[{label: string, value: number},{label: string, value: number}]}
  */
 export const isKeepAliveDict = [
-    { label: '缓存', value: true },
-    { label: '不缓存', value: false },
+    { label: '缓存', value: 1 },
+    { label: '不缓存', value: 2 },
 ];
 
 /**
  * 是否固定
- * @type {[{label: string, value: boolean},{label: string, value: boolean}]}
+ * @type {[{label: string, value: number},{label: string, value: number}]}
  */
 export const isAffixDict = [
-    { label: '固定', value: true },
-    { label: '不固定', value: false },
+    { label: '固定', value: 1 },
+    { label: '不固定', value: 2 },
 ];
 
 /**
  * 是否内嵌
- * @type {[{label: string, value: boolean},{label: string, value: boolean}]}
+ * @type {[{label: string, value: number},{label: string, value: number}]}
  */
 export const isIframeDict = [
-    { label: '是', value: true },
-    { label: '否', value: false },
+    { label: '是', value: 1 },
+    { label: '否', value: 2 },
 ];
 
 // 按钮类型
