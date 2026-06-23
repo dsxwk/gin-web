@@ -39,6 +39,10 @@ const props = defineProps({
     type: Object,
     required: true,
     default: () => ({})
+  },
+  menuId: {
+    type: Number,
+    default: 0
   }
 });
 
@@ -315,13 +319,12 @@ function findMenuByPath(data, path) {
 }
 // 打开弹窗
 const openDialog = async (type, row) => {
-  // 确保角色数据和菜单数据已加载
+  // 确保角色数据已加载
   if (!state.roles || state.roles.length === 0) {
     await getRoles();
   }
-  if (!state.menuData || state.menuData.length === 0) {
-    state.menuData = getData(routesList.value);
-  }
+  // 每次打开弹窗都从Pinia获取最新菜单数据
+  state.menuData = getData(routesList.value);
   
   state.ruleForm = {
     menuSuperior: [], // 上级菜单
@@ -333,6 +336,7 @@ const openDialog = async (type, row) => {
     path: '', // 路由路径
     redirect: '', // 路由重定向，有子集 children 时
     meta: {
+      id: 0,
       title: '', // 菜单名称
       icon: '', // 菜单图标
       isHide: 2, // 是否隐藏 1=隐藏 2=不隐藏
@@ -354,7 +358,15 @@ const openDialog = async (type, row) => {
       const data = await detail(row.id);
       Object.keys(state.ruleForm).forEach((key) => {
         if (data.hasOwnProperty(key)) {
-          state.ruleForm[key] = data[key];
+          if (key === 'meta' && typeof data[key] === 'object') {
+            Object.keys(state.ruleForm.meta).forEach(metaKey => {
+              if (data.meta && data.meta.hasOwnProperty(metaKey)) {
+                state.ruleForm.meta[metaKey] = data.meta[metaKey];
+              }
+            });
+          } else {
+            state.ruleForm[key] = data[key];
+          }
         }
       });
       // 设置上级菜单默认选中
@@ -363,7 +375,7 @@ const openDialog = async (type, row) => {
       } else {
         state.ruleForm.menuSuperior = [];
       }
-      // 处理角色数据，转换为 ID 数组
+      // 处理角色数据,转换为id数组
       if (data.roleMenus) {
         state.ruleForm.meta.roles = Array.isArray(data.roleMenus) 
           ? data.roleMenus.map(role => role.roleId || role.id || role) 
@@ -398,40 +410,42 @@ const onCancel = () => {
 };
 // 提交
 const onSubmit = async () => {
-  // 获取上级菜单 id
-  if (state.ruleForm.menuSuperior && state.ruleForm.menuSuperior.length > 0) {
-    const lastPath = state.ruleForm.menuSuperior[state.ruleForm.menuSuperior.length - 1];
-    const menu = findMenuByPath(state.menuData, lastPath);
-    state.ruleForm.pid = menu ? menu.id : 0;
-  } else {
-    state.ruleForm.pid = 0; // 顶级菜单
-  }
-
-  state.ruleForm.roleMenus = state.ruleForm.meta.roles?.map(roleId => {
-    const role = state.roles.find(r => r.id === roleId);
-    return {
-      menuId: props.row.id ?? 0,
-      roleId: roleId,
-      name: role ? role.name : ''
-    };
-  }) ?? [];
-
-  state.ruleForm.isLink === true ? state.ruleForm.isLink = 1 : state.ruleForm.isLink = 2;
-  state.ruleForm.meta.isHide === true ? state.ruleForm.meta.isHide = 1 : state.ruleForm.meta.isHide = 2;
-  state.ruleForm.meta.isKeepAlive === true ? state.ruleForm.meta.isKeepAlive = 1 : state.ruleForm.meta.isKeepAlive = 2;
-  state.ruleForm.meta.isAffix === true ? state.ruleForm.meta.isAffix = 1 : state.ruleForm.meta.isAffix = 2;
-  state.ruleForm.meta.isIframe === true ? state.ruleForm.meta.isIframe = 1 : state.ruleForm.meta.isIframe = 2;
-
   dialogFormRef.value.validate(async (valid) => {
     if (!valid) return;
 
+    const submitData = { ...state.ruleForm };
+
+    if (submitData.menuSuperior && submitData.menuSuperior.length > 0) {
+      const lastPath = submitData.menuSuperior[submitData.menuSuperior.length - 1];
+      const menu = findMenuByPath(state.menuData, lastPath);
+      submitData.pid = menu ? menu.id : 0;
+    } else {
+      submitData.pid = 0;
+    }
+
+    submitData.roleMenus = submitData.meta.roles?.map(roleId => {
+      const role = state.roles.find(r => r.id === roleId);
+      return {
+        menuId: props.menuId ?? props.row.id ?? 0,
+        roleId: roleId,
+        name: role ? role.name : ''
+      };
+    }) ?? [];
+
+    submitData.isLink = submitData.isLink === 1 ? 1 : 2;
+    submitData.meta.isHide = submitData.meta.isHide === 1 ? 1 : 2;
+    submitData.meta.isKeepAlive = submitData.meta.isKeepAlive === 1 ? 1 : 2;
+    submitData.meta.isAffix = submitData.meta.isAffix === 1 ? 1 : 2;
+    submitData.meta.isIframe = submitData.meta.isIframe === 1 ? 1 : 2;
+    submitData.sort = parseInt(submitData.sort) || 0;
+
     let msg = '';
     if (state.dialog.type === 'add') {
-      await api.create(state.ruleForm);
+      await api.create(submitData);
       msg = '创建成功';
     } else {
-      state.ruleForm.id = props.row.id;
-      await api.update(state.ruleForm);
+      submitData.id = props.row.id;
+      await api.update(submitData);
       msg = '更新成功';
     }
     ElMessage.success(msg);

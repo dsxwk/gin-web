@@ -136,13 +136,15 @@ const onSubmit = async () => {
   dialogFormRef.value.validate(async (valid) => {
     if (!valid) return;
 
+    const submitData = { ...state.ruleForm };
+
     let msg = '';
     if (state.dialog.type === 'add') {
-      await api.create(state.ruleForm);
+      await api.create(submitData);
       msg = '创建成功';
     } else {
-      state.ruleForm.id = props.row.id;
-      await api.update(state.ruleForm);
+      submitData.id = props.row.id;
+      await api.update(submitData);
       msg = '更新成功';
     }
     ElMessage.success(msg);

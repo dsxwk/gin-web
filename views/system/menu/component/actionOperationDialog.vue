@@ -360,7 +360,9 @@ const onCancel = () => {
 };
 // 提交
 const onSubmit = async () => {
-  state.ruleForm.actionRoles = state.ruleForm.actionRoles?.map(roleId => {
+  const submitData = { ...state.ruleForm };
+
+  submitData.actionRoles = submitData.actionRoles?.map(roleId => {
     const role = state.roles.find(r => r.id === roleId);
     return {
       roleId: roleId,
@@ -369,24 +371,26 @@ const onSubmit = async () => {
     };
   }) ?? [];
 
-  if (state.ruleForm.parent && state.ruleForm.parent.length > 0) {
-    state.ruleForm.pid = state.ruleForm.parent[0];
+  if (submitData.parent && submitData.parent.length > 0) {
+    submitData.pid = submitData.parent[0];
   } else {
-    state.ruleForm.pid = 0;
+    submitData.pid = 0;
   }
+
+  submitData.sort = parseInt(submitData.sort) || 0;
 
   dialogFormRef.value.validate(async (valid) => {
     if (!valid) return;
 
     let msg = '';
     if (state.dialog.type === 'add') {
-      await api.createAction(state.ruleForm);
+      await api.createAction(submitData);
       msg = '创建成功';
     } else {
-      state.ruleForm.menuId = props.menuId;
-      state.ruleForm.id = props.row.id;
-      state.ruleForm.actionId = props.row.id;
-      await api.updateAction(state.ruleForm);
+      submitData.menuId = props.menuId;
+      submitData.id = props.row.id;
+      submitData.actionId = props.row.id;
+      await api.updateAction(submitData);
       msg = '更新成功';
     }
     ElMessage.success(msg);

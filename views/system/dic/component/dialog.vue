@@ -255,18 +255,20 @@ const onCancel = () => {
 };
 // 提交
 const onSubmit = async () => {
+  const submitData = { ...state.ruleForm };
+
   // 获取上级字典 id
-  if (state.ruleForm.dictSuperior && state.ruleForm.dictSuperior.length > 0) {
-    const lastPath = state.ruleForm.dictSuperior[state.ruleForm.dictSuperior.length - 1];
+  if (submitData.dictSuperior && submitData.dictSuperior.length > 0) {
+    const lastPath = submitData.dictSuperior[submitData.dictSuperior.length - 1];
     const dict = findByPath(state.dictData, lastPath);
-    state.ruleForm.pid = dict ? dict.id : 0;
+    submitData.pid = dict ? dict.id : 0;
   } else {
-    state.ruleForm.pid = 0; // 顶级字典
+    submitData.pid = 0; // 顶级字典
   }
 
-  if (state.ruleForm.extend !== '' && typeof state.ruleForm.extend === 'string') {
+  if (submitData.extend !== '' && typeof submitData.extend === 'string') {
     try {
-      state.ruleForm.extend = JSON.parse(state.ruleForm.extend);
+      submitData.extend = JSON.parse(submitData.extend);
     } catch (e) {
       ElMessage.error('扩展字典格式错误，请输入合法的 JSON 字符串');
       return;
@@ -278,11 +280,11 @@ const onSubmit = async () => {
 
     let msg = '';
     if (state.dialog.type === 'add') {
-      await api.create(state.ruleForm);
+      await api.create(submitData);
       msg = '创建成功';
     } else {
-      state.ruleForm.id = props.row.id;
-      await api.update(state.ruleForm);
+      submitData.id = props.row.id;
+      await api.update(submitData);
       msg = '更新成功';
     }
     ElMessage.success(msg);
