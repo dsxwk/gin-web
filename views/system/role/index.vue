@@ -69,6 +69,7 @@ const state = reactive({
           return getDict(statusDict, scope.row?.status);
         }
       },
+      {key: 'desc', colWidth: '', title: '描述', type: 'text', isCheck: true},
       {key: 'createdAt', colWidth: '', title: '创建时间', type: 'text', isCheck: true},
       {key: 'updatedAt', colWidth: '', title: '更新时间', type: 'text', isCheck: true},
     ],

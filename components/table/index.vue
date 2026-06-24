@@ -70,6 +70,7 @@
 				<template v-slot="scope">
 					<template v-if="item.type === 'image'">
 						<el-image
+              v-if="scope.row[item.key]"
 							:style="{ width: `${item.width}px`, height: `${item.height}px` }"
 							:src="scope.row[item.key]"
 							:zoom-rate="1.2"

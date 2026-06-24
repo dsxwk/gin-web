@@ -252,6 +252,7 @@ const onCancel = () => {
 
 const onSubmit = async () => {
   const submitData = { ...state.ruleForm };
+  submitData.age = parseInt(submitData.age) || 0;
 
   submitData.userRoles = submitData.userRoles?.map(roleId => {
     const role = state.roles.find(r => r.id === roleId);

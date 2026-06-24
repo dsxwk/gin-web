@@ -74,7 +74,7 @@ const getFormData = computed(() => {
     {
       label: '描述',
       prop: 'desc',
-      type: 'input',
+      type: 'textarea',
       attrs: {
         placeholder: '请输入描述',
         clearable: true
