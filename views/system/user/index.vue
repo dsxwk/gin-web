@@ -102,7 +102,7 @@ const state = reactive({
       isRefresh: true, // 是否显示刷新
       fixed: 'right', // 固定操作列
       operationWith: 200, // 固定操作列宽度
-      notPage: true, // 是否不分页
+      notPage: false, // 是否不分页
     },
     // 搜索表单，动态生成（传空数组时，将不显示搜索，注意格式）
     search: [
