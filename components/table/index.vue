@@ -1,6 +1,7 @@
 <template>
 	<div class="table-container layout-pd">
-    <div class="flex items-center" style="justify-content: space-between;">
+    <TableSearch ref="tableSearchRef" :search="searchList" :custom-search="customSearch" @search="onSearch" class="table-search-box" />
+    <div class="flex items-center table-toolbar" style="justify-content: space-between;">
       <div class="table-tools-bar" v-if="slots.tools">
         <slot name="tools"></slot>
       </div>
@@ -13,7 +14,7 @@
             trigger="click"
             transition="el-zoom-in-top"
             popper-class="table-tool-popper"
-            :width="300"
+            :width="600"
             :persistent="false"
             @show="onSetTable"
         >
@@ -22,6 +23,7 @@
           </template>
           <template #default>
             <div class="tool-box">
+            <div class="tool-box-left">
               <el-tooltip content="拖动进行排序" placement="top-start">
                 <SvgIcon name="fa fa-question-circle-o" :size="17" class="ml11" color="#909399" />
               </el-tooltip>
@@ -35,14 +37,43 @@
               <el-checkbox v-model="getConfig.isSerialNo" class="ml12 mr1" label="序号" />
               <el-checkbox v-model="getConfig.isSelection" class="ml12 mr1" label="多选" />
             </div>
-            <el-scrollbar>
-              <div ref="toolSetRef" class="tool-sortable">
-                <div class="tool-sortable-item" v-for="v in header" :key="v.key" :data-key="v.key">
-                  <i class="fa fa-arrows-alt handle cursor-pointer"></i>
-                  <el-checkbox v-model="v.isCheck" size="default" class="ml12 mr8" :label="v.title" @change="onCheckChange" />
-                </div>
+            <div class="tool-box-right">
+              <el-checkbox
+                  v-model="state.checkSearchAll"
+                  :indeterminate="state.checkSearchIndeterminate"
+                  @change="onCheckSearchAllChange"
+              >
+                筛选项
+              </el-checkbox>
+            </div>
+          </div>
+            <div class="tool-content">
+              <div class="tool-column">
+                <el-scrollbar>
+                  <div ref="toolSetRef" class="tool-sortable">
+                    <template v-for="v in props.header" :key="v?.key">
+                      <div class="tool-sortable-item" :data-key="v?.key" v-if="v">
+                        <i class="fa fa-arrows-alt handle cursor-pointer"></i>
+                        <el-checkbox v-model="v.isCheck" size="default" class="ml12 mr8" :label="v.title" @change="onCheckChange" />
+                      </div>
+                    </template>
+                  </div>
+                </el-scrollbar>
               </div>
-            </el-scrollbar>
+              <div class="tool-divider"></div>
+              <div class="tool-column">
+                <el-scrollbar>
+                  <div ref="toolSearchSetRef" class="tool-sortable">
+                    <template v-for="v in props.header" :key="v?.key">
+                      <div class="tool-sortable-item" :data-key="v?.key" v-if="v && v.search">
+                        <i class="fa fa-arrows-alt handle cursor-pointer"></i>
+                        <el-checkbox v-model="v.search.isSearch" size="default" class="ml12 mr8" :label="v.search.label || v.title" @change="onSearchCheckChange" />
+                      </div>
+                    </template>
+                  </div>
+                </el-scrollbar>
+              </div>
+            </div>
           </template>
         </el-popover>
       </div>
@@ -87,10 +118,10 @@
             >
             </component>
           </template>
-					<template v-else>
-						{{ scope.row[item.key] }}
-					</template>
+				<template v-else>
+					{{ scope.row[item.key] }}
 				</template>
+			</template>
 			</el-table-column>
 			<el-table-column label="操作" :width="config.operationWith" v-if="config.isOperate" :fixed="config.fixed">
 				<template v-slot="scope">
@@ -128,7 +159,7 @@
 </template>
 
 <script setup name="netxTable">
-import {reactive, computed, nextTick, ref, useSlots} from 'vue';
+import {reactive, computed, nextTick, ref, useSlots, watch} from 'vue';
 import { ElMessage } from 'element-plus';
 import printJs from 'print-js';
 import table2excel from 'js-table2excel';
@@ -136,6 +167,7 @@ import Sortable from 'sortablejs';
 import { storeToRefs } from 'pinia';
 import { useThemeConfig } from '/@/stores/themeConfig';
 import '/@/theme/tableTool.scss';
+import TableSearch from './component/search.vue';
 
 const slots = useSlots();
 // 定义父组件传过来的值
@@ -160,13 +192,44 @@ const props = defineProps({
 		type: String,
 		default: () => '',
 	},
+	// 自定义搜索，默认与构建出来的搜索合并
+	customSearch: {
+		type: Object,
+		default: () => null,
+	},
+});
+
+// 从header中提取搜索配置
+const searchList = computed(() => {
+	return props.header
+		.filter(item => item && item.search)
+		.map(item => {
+			const search = item.search;
+			return {
+				label: search.label || item.title,
+				prop: search.prop || item.key,
+				placeholder: search.placeholder || `请输入${search.label || item.title}`,
+				required: search.required || false,
+				type: search.type || 'input',
+				options: search.options || [],
+				rangeProp: search.rangeProp || [],
+				// 搜索格式化相关配置
+				operator: search.operator || '=',
+				column: search.column || '',
+				rangeOperator: search.rangeOperator || ['>=', '<='],
+				isSearch: search.isSearch !== undefined ? search.isSearch : true,
+				_searchKey: item.key,
+			};
+		});
 });
 
 // 定义子组件向父组件传值/事件
-const emit = defineEmits(['delRow', 'pageChange', 'sortHeader']);
+const emit = defineEmits(['delRow', 'pageChange', 'sortHeader', 'search']);
 
 // 定义变量内容
 const toolSetRef = ref();
+const toolSearchSetRef = ref();
+const tableSearchRef = ref();
 const storesThemeConfig = useThemeConfig();
 const { themeConfig } = storeToRefs(storesThemeConfig);
 const state = reactive({
@@ -177,6 +240,8 @@ const state = reactive({
 	selectList: [],
 	checkListAll: true,
 	checkListIndeterminate: false,
+	checkSearchAll: false,
+	checkSearchIndeterminate: false,
 });
 // 设置边框显示/隐藏
 const setBorder = computed(() => {
@@ -188,20 +253,54 @@ const getConfig = computed(() => {
 });
 // 设置 tool header 数据
 const setHeader = computed(() => {
-	return props.header.filter((v) => v.isCheck);
+	return props.header.filter((v) => v && v.isCheck);
 });
 // tool 列显示全选改变时
 const onCheckAllChange = (val) => {
-	if (val) props.header.forEach((v) => (v.isCheck = true));
-	else props.header.forEach((v) => (v.isCheck = false));
+	if (val) props.header.forEach((v) => { if (v) v.isCheck = true; });
+	else props.header.forEach((v) => { if (v) v.isCheck = false; });
 	state.checkListIndeterminate = false;
 };
 // tool 列显示当前项改变时
 const onCheckChange = () => {
-	const headers = props.header.filter((v) => v.isCheck).length;
-	state.checkListAll = headers === props.header.length;
-	state.checkListIndeterminate = headers > 0 && headers < props.header.length;
+	syncCheckListState();
 };
+// tool 筛选项全选改变时
+const onCheckSearchAllChange = (val) => {
+	props.header.forEach((v) => {
+		if (v && v.search) {
+			v.search.isSearch = val;
+		}
+	});
+	state.checkSearchIndeterminate = false;
+};
+// tool 筛选项当前项改变时
+const onSearchCheckChange = () => {
+	syncCheckSearchState();
+};
+// 同步列显示全选/半选状态
+const syncCheckListState = () => {
+	const list = props.header.filter((v) => v);
+	const checked = list.filter((v) => v.isCheck).length;
+	state.checkListAll = list.length > 0 && checked === list.length;
+	state.checkListIndeterminate = checked > 0 && checked < list.length;
+};
+// 同步筛选项全选/半选状态
+const syncCheckSearchState = () => {
+	const searchHeader = props.header.filter((v) => v && v.search);
+	const searchChecked = searchHeader.filter((v) => v.search.isSearch !== false).length;
+	state.checkSearchAll = searchHeader.length > 0 && searchChecked === searchHeader.length;
+	state.checkSearchIndeterminate = searchChecked > 0 && searchChecked < searchHeader.length;
+};
+// 初始化/header 变化时同步全选状态
+watch(
+	() => props.header,
+	() => {
+		syncCheckListState();
+		syncCheckSearchState();
+	},
+	{ immediate: true, deep: true }
+);
 // 表格多选改变时，用于导出
 const onSelectionChange = (val) => {
 	state.selectList = val;
@@ -209,6 +308,10 @@ const onSelectionChange = (val) => {
 // 删除当前项
 const onDelRow = (row) => {
 	emit('delRow', row);
+};
+// 搜索
+const onSearch = (params) => {
+	emit('search', params);
 };
 // 分页改变
 const onHandleSizeChange = (val) => {
@@ -235,12 +338,13 @@ const onPrintTable = () => {
 	let tableTd = {};
 	// 表头
 	props.header.forEach((v) => {
-		tableTh += `<th class="table-th">${v.title}</th>`;
+		if (v) tableTh += `<th class="table-th">${v.title}</th>`;
 	});
 	// 表格内容
 	props.data.forEach((val, key) => {
 		if (!tableTd[key]) tableTd[key] = [];
 		props.header.forEach((v) => {
+			if (!v) return;
 			if (v.type === 'text') {
 				tableTd[key].push(`<td class="table-th table-center">${val[v.key]}</td>`);
 			} else if (v.type === 'image') {
@@ -269,26 +373,57 @@ const onRefreshTable = () => {
 // 设置
 const onSetTable = () => {
 	nextTick(() => {
-		const sortable = Sortable.create(toolSetRef.value, {
+		Sortable.create(toolSetRef.value, {
 			handle: '.handle',
 			dataIdAttr: 'data-key',
 			animation: 150,
-			onEnd: () => {
+			onEnd: (evt) => {
 				const headerList = [];
-				sortable.toArray().forEach((val) => {
+				evt.to.querySelectorAll('[data-key]').forEach((val) => {
 					props.header.forEach((v) => {
-						if (v.key === val) headerList.push({ ...v });
+						if (v && v.key === val.getAttribute('data-key')) headerList.push({ ...v });
 					});
 				});
 				emit('sortHeader', headerList);
 			},
 		});
+		if (toolSearchSetRef.value) {
+			Sortable.create(toolSearchSetRef.value, {
+				handle: '.handle',
+				dataIdAttr: 'data-key',
+				animation: 150,
+				onEnd: (evt) => {
+					const searchKeys = [];
+					evt.to.querySelectorAll('[data-key]').forEach((val) => {
+						searchKeys.push(val.getAttribute('data-key'));
+					});
+					const newHeader = [];
+					const searchItems = [];
+					props.header.forEach((v) => {
+						if (v && v.search) {
+							searchItems.push(v);
+						} else if (v) {
+							newHeader.push(v);
+						}
+					});
+					searchKeys.forEach((key) => {
+						const item = searchItems.find((v) => v.key === key);
+						if (item) newHeader.push(item);
+					});
+					props.header.splice(0, props.header.length, ...newHeader);
+				},
+			});
+		}
 	});
 };
 
 // 暴露变量
 defineExpose({
 	pageReset,
+	// 获取当前搜索条件（__search 对象）
+	getSearch: () => tableSearchRef.value?.getSearch(),
+	// 校验当前搜索项是否有问题
+	validateCurrentSearch: () => tableSearchRef.value?.validateCurrentSearch(),
 });
 </script>
 
@@ -296,8 +431,16 @@ defineExpose({
 .table-container {
 	display: flex;
 	flex-direction: column;
+  .table-search-box {
+    :deep(.el-col) {
+      margin-bottom: 0;
+    }
+  }
+  .table-toolbar {
+    margin-bottom: 10px;
+  }
   .table-tools-bar {
-    padding-bottom: 10px;
+    flex: 1;
   }
   .table-header-right-tool {
     display: flex;
@@ -311,6 +454,9 @@ defineExpose({
         margin-right: 0;
       }
     }
+  }
+  .table-search-wrapper {
+    flex-shrink: 0;
   }
 	.el-table {
 		flex: 1;

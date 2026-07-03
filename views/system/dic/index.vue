@@ -1,7 +1,6 @@
 <template>
   <div class="table-demo-container layout-padding">
     <div class="table-demo-padding layout-padding-view layout-padding-auto">
-      <TableSearch :search="state.tableData.search" @search="onSearch"/>
       <Table
           dev
           ref="tableRef"
@@ -9,6 +8,7 @@
           @delRow="onTableDelRow"
           @sortHeader="onSortHeader"
           @pageChange="onTablePageChange"
+          @search="onSearch"
           row-key="id"
           :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
       >
@@ -33,7 +33,7 @@
           </div>
         </template>
         <template #dialog>
-          <DictDialog ref="dictDialogRef" @refresh="getTableData(state.tableData.param)" :row="listRow" :dictId="dictId"/>
+          <DictDialog ref="dictDialogRef" @refresh="getTableData(state.tableData.param)" :row="listRow" :dictId="dictId" :dict-data="state.tableData.data"/>
         </template>
       </Table>
     </div>
@@ -44,13 +44,22 @@
 import {defineAsyncComponent, h, onMounted, reactive, ref} from 'vue';
 import {ElMessage} from 'element-plus';
 import {dictApi} from '/@/api/dict';
+import {withTableLoading} from '/@/utils/commonFunction';
 
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
-const TableSearch = defineAsyncComponent(() => import('/@/components/table/component/search.vue'));
 const DictDialog = defineAsyncComponent(() => import('/@/views/system/dic/component/dialog.vue'));
 
 const api = dictApi();
+// 扩展字段展示：空对象/空数组不展示，非空对象转为紧凑 JSON
+const formatExtend = (val) => {
+  if (val == null || val === '') return '';
+  if (typeof val === 'object') {
+    const isEmpty = Array.isArray(val) ? val.length === 0 : Object.keys(val).length === 0;
+    return isEmpty ? '' : JSON.stringify(val);
+  }
+  return val === '[]' || val === '{}' ? '' : val;
+};
 // 定义变量内容
 const tableRef = ref();
 const dictDialogRef = ref();
@@ -64,13 +73,13 @@ const state = reactive({
     header: [
       {key: 'id', colWidth: '', title: 'ID', type: 'text', isCheck: true},
       {key: 'pid', colWidth: '', title: '父级id', type: 'text', isCheck: true},
-      {key: 'name', colWidth: '140', title: '字典名称(英文)', type: 'text', isCheck: true},
-      {key: 'title', colWidth: '140', title: '字典名称(中文)', type: 'text', isCheck: true},
+      {key: 'name', colWidth: '140', title: '标识', type: 'text', isCheck: true, search: {type: 'input', isSearch: true}},
+      {key: 'title', colWidth: '140', title: '名称', type: 'text', isCheck: true},
       {key: 'value', colWidth: '', title: '映射值', type: 'text', isCheck: true},
-      {key: 'extend', colWidth: '100', title: '扩展字段', type: 'text', isCheck: true},
+      {key: 'extend', colWidth: '100', title: '扩展字段', type: 'text', isCheck: true, render: (scope) => formatExtend(scope.row?.extend)},
       {key: 'sort', colWidth: '', title: '排序', type: 'text', isCheck: true},
       {key: 'desc', colWidth: '', title: '描述', type: 'text', isCheck: true},
-      {key: 'status', colWidth: '', title: '状态', type: 'text', isCheck: true},
+      {key: 'status', colWidth: '', title: '状态', type: 'text', isCheck: true, search: {type: 'select', options: [{label: '启用', value: 1}, {label: '禁用', value: 2}], isSearch: true}},
       {key: 'createdAt', colWidth: '100', title: '创建时间', type: 'text', isCheck: true},
       {key: 'updatedAt', colWidth: '100', title: '更新时间', type: 'text', isCheck: true},
     ],
@@ -87,24 +96,9 @@ const state = reactive({
       isRefresh: true, // 是否显示刷新
       fixed: 'right', // 固定操作列
       operationWith: 200, // 固定操作列宽度
-      notPage: false, // 是否不分页
+      notPage: true, // 是否不分页
     },
-    // 搜索表单，动态生成（传空数组时，将不显示搜索，注意格式）
-    search: [
-      {label: '名称(英文)', prop: 'name', placeholder: '请输入字典名称(英文)', required: false, type: 'input'},
-      {
-        label: '状态',
-        prop: 'status',
-        placeholder: '请选择',
-        required: false,
-        type: 'select',
-        options: [
-          {label: '启用', value: 1},
-          {label: '禁用', value: 2},
-        ],
-      },
-    ],
-    // 搜索参数、搜索时传给后台的值,`getTableData` 中使用）
+    // 搜索参数（不用传，用于分页、搜索时传给后台的值，`getTableData` 中使用）
     param: {},
     // 打印标题
     printName: 'ginBaseAdmin 表格打印演示',
@@ -120,12 +114,13 @@ const onOpenEditDict = (type, row) => {
   dictDialogRef.value.openDialog(type, row);
 };
 // 初始化列表数据
-const getTableData = async (param) => {
-  state.tableData.config.loading = true;
+const getTableData = (param) => withTableLoading(state.tableData.config, async () => {
+  param.page = 1;
+  param.pageSize = 10;
+  param.notPage = true;
   let response = await api.list(param);
-  state.tableData.data = response?.data;
-  state.tableData.config.loading = false;
-};
+  state.tableData.data = response?.data?.list;
+});
 // 搜索点击时表单回调
 const onSearch = (data) => {
   Object.entries(data).forEach(([key, value]) => {

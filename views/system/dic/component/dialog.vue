@@ -11,6 +11,16 @@
             size: 'default'
           }"
       >
+        <template #extend>
+          <div class="extend-editor">
+            <div v-for="(item, idx) in state.extendRows" :key="idx" class="extend-row">
+              <el-input v-model="item.key" placeholder="键" class="extend-key" />
+              <el-input v-model="item.value" placeholder="值" class="extend-value" />
+              <el-button link type="danger" @click="removeExtendRow(idx)">删除</el-button>
+            </div>
+            <el-button type="primary" plain size="small" @click="addExtendRow">添加</el-button>
+          </div>
+        </template>
       </ConfigForm>
 			<template #footer>
 				<span class="dialog-footer">
@@ -23,7 +33,7 @@
 </template>
 
 <script setup name="systemDictDialog">
-import {onMounted, reactive, ref, markRaw, nextTick} from 'vue';
+import {reactive, ref, markRaw, nextTick} from 'vue';
 import {ElMessage} from 'element-plus';
 import {dictApi} from '/@/api/dict';
 import ConfigForm from '/@/components/form/index.vue';
@@ -34,6 +44,10 @@ const props = defineProps({
     type: Object,
     required: true,
     default: () => ({})
+  },
+  dictData: {
+    type: Array,
+    default: () => []
   }
 });
 
@@ -57,7 +71,7 @@ const state = reactive({
     desc: "", // 描述
     status: 1, // 状态 1=启用 2=禁用
   },
-	dictData: [], // 上级字典数据
+  extendRows: [], // 扩展字段键值对编辑行
 	dialog: {
 		isShowDialog: false,
 		type: '',
@@ -116,11 +130,11 @@ const formData = ref([
     prop: 'dictSuperior',
     type: 'cascader',
     options: () => {
-      return state.dictData;
+      return props.dictData;
     },
     props: {
       checkStrictly: true,
-      value: 'path',
+      value: 'id',
       label: 'title',
     },
     attrs: {
@@ -152,16 +166,21 @@ const formData = ref([
     },
   },
   {
+    label: '排序',
+    prop: 'sort',
+    type: 'input',
+    col: 12,
+    attrs: {
+      placeholder: '请输入排序',
+      clearable: true
+    },
+    rules: []
+  },
+  {
     label: '扩展字典',
     prop: 'extend',
-    type: 'textarea',
-    col: 24,
-    attrs: {
-      placeholder: '请输入扩展字典(json字符串)',
-      clearable: true,
-      class: 'w100',
-      rows: 3
-    },
+    slot: 'extend',
+    span: 24,
   },
   {
   label: '描述',
@@ -177,10 +196,10 @@ const formData = ref([
   }
 ]);
 const rules = {};
-// 递归查找父级 path 数组
+// 递归查找从根到目标节点的 id 路径
 function findPathById(data, targetId, pathArr = []) {
   for (const item of data) {
-    const newPathArr = [...pathArr, item.path];
+    const newPathArr = [...pathArr, item.id];
     if (item.id === targetId) {
       return newPathArr;
     }
@@ -191,17 +210,21 @@ function findPathById(data, targetId, pathArr = []) {
   }
   return [];
 }
-// 递归查找字典项
-function findByPath(data, path) {
-  for (const item of data) {
-    if (item.path === path) return item;
-    if (item.children && item.children.length) {
-      const found = findByPath(item.children, path);
-      if (found) return found;
-    }
+// 新增一行扩展字段
+const addExtendRow = () => {
+  state.extendRows.push({ key: '', value: '' });
+};
+// 删除一行扩展字段
+const removeExtendRow = (idx) => {
+  state.extendRows.splice(idx, 1);
+};
+// 将 extend 对象拆解为键值对编辑行
+const extendToRows = (extend) => {
+  if (extend && typeof extend === 'object' && !Array.isArray(extend)) {
+    return Object.entries(extend).map(([key, value]) => ({ key, value }));
   }
-  return null;
-}
+  return [];
+};
 // 打开弹窗
 const openDialog = async (type, row) => {
   state.ruleForm = {
@@ -210,10 +233,11 @@ const openDialog = async (type, row) => {
     title: '', // 字典名称(中文)
     value: '', // 映射值
     sort: 0, // 排序
-    extend: [], // 扩展字段
+    extend: {}, // 扩展字段
     desc: "", // 描述
     status: 1, // 状态 1=启用 2=禁用
   };
+  state.extendRows = [];
   if (type === 'edit') {
     const data = await detail(row.id);
     Object.keys(state.ruleForm).forEach((key) => {
@@ -221,14 +245,10 @@ const openDialog = async (type, row) => {
         state.ruleForm[key] = data[key];
       }
     });
-    if (typeof data.extend === 'object' && data.extend !== null) {
-      state.ruleForm.extend = JSON.stringify(data.extend, null, 2);
-    } else {
-      state.ruleForm.extend = data.extend || '';
-    }
+    state.extendRows = extendToRows(data.extend);
     // 设置上级字典默认选中
     if (row.pid) {
-      state.ruleForm.dictSuperior = findPathById(state.dictData, row.pid);
+      state.ruleForm.dictSuperior = findPathById(props.dictData, row.pid);
     } else {
       state.ruleForm.dictSuperior = [];
     }
@@ -257,23 +277,21 @@ const onCancel = () => {
 const onSubmit = async () => {
   const submitData = { ...state.ruleForm };
 
-  // 获取上级字典 id
+  // 获取上级字典 id（级联值为 id 路径，末位即父级）
   if (submitData.dictSuperior && submitData.dictSuperior.length > 0) {
-    const lastPath = submitData.dictSuperior[submitData.dictSuperior.length - 1];
-    const dict = findByPath(state.dictData, lastPath);
-    submitData.pid = dict ? dict.id : 0;
+    submitData.pid = submitData.dictSuperior[submitData.dictSuperior.length - 1];
   } else {
     submitData.pid = 0; // 顶级字典
   }
 
-  if (submitData.extend !== '' && typeof submitData.extend === 'string') {
-    try {
-      submitData.extend = JSON.parse(submitData.extend);
-    } catch (e) {
-      ElMessage.error('扩展字典格式错误，请输入合法的 JSON 字符串');
-      return;
-    }
-  }
+  submitData.sort = parseInt(submitData.sort) || 0;
+
+  // 将键值对编辑行合并为 extend 对象（过滤空 key）
+  submitData.extend = state.extendRows.reduce((acc, item) => {
+    const key = (item.key ?? '').toString().trim();
+    if (key) acc[key] = item.value;
+    return acc;
+  }, {});
 
   dialogFormRef.value.validate(async (valid) => {
     if (!valid) return;
@@ -298,16 +316,26 @@ const detail = async (id) => {
 
   return res.data;
 };
-const getData = async () => {
-  const data = await api.list();
-  state.dictData = data.data;
-};
-// 页面加载时
-onMounted(() => {
-	getData();
-});
 // 暴露变量
 defineExpose({
 	openDialog,
 });
 </script>
+
+<style scoped>
+.extend-editor {
+  width: 100%;
+}
+.extend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.extend-key {
+  flex: 1;
+}
+.extend-value {
+  flex: 2;
+}
+</style>

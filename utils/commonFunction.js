@@ -4,6 +4,21 @@ import { ElMessage } from 'element-plus';
 import { formatDate } from '/@/utils/formatTime';
 import { useI18n } from 'vue-i18n';
 
+/**
+ * 表格加载包装：自动开关 loading，无论请求成功或失败都会关闭 loading
+ * @param {Object} config 表格配置对象（需包含 loading 字段，如 state.tableData.config）
+ * @param {Function} task 返回 Promise 的异步任务
+ * @returns {Promise} task 的执行结果
+ */
+export const withTableLoading = async (config, task) => {
+	if (config) config.loading = true;
+	try {
+		return await task();
+	} finally {
+		if (config) config.loading = false;
+	}
+};
+
 export default function () {
 	const { t } = useI18n();
 	const { toClipboard } = useClipboard();

@@ -1,7 +1,6 @@
 <template>
   <div class="table-demo-container layout-padding">
     <div class="table-demo-padding layout-padding-view layout-padding-auto">
-      <TableSearch :search="state.tableData.search" @search="onSearch"/>
       <Table
           ref="tableRef"
           v-bind="state.tableData"
@@ -10,6 +9,7 @@
           @pageChange="onTablePageChange"
           @sortHeader="onSortHeader"
           @selection-change="onSelectionChange"
+          @search="onSearch"
       >
         <template #tools>
           <div class="table-tool">
@@ -44,10 +44,10 @@ import {ElMessage} from 'element-plus';
 import {articleApi} from '/@/api/article';
 import {isPublishDict} from '/@/dict/article/index.js';
 import {getDict} from '/@/utils/dict.js';
+import {withTableLoading} from '/@/utils/commonFunction';
 
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
-const TableSearch = defineAsyncComponent(() => import('/@/components/table/component/search.vue'));
 const TableDialog = defineAsyncComponent(() => import('/@/views/article/component/dialog.vue'));
 
 const api = articleApi();
@@ -67,7 +67,7 @@ const state = reactive({
           return scope.row?.user?.fullName;
         }
       },
-      {key: 'title', colWidth: '100', title: '标题', type: 'text', isCheck: true},
+      {key: 'title', colWidth: '100', title: '标题', type: 'text', isCheck: true, search: {type: 'input', isSearch: true}},
       {key: 'content', colWidth: '100', title: '内容', type: 'text', isCheck: true},
       {key: 'category.name', colWidth: '100', title: '分类', type: 'text', isCheck: true,
         render: (scope) => {
@@ -84,7 +84,7 @@ const state = reactive({
           return getDict(isPublishDict, scope.row?.isPublish);
         }
       },
-      {key: 'createdAt', colWidth: '120', title: '创建时间', type: 'text', isCheck: true},
+      {key: 'createdAt', colWidth: '120', title: '创建时间', type: 'text', isCheck: true, search: {type: 'date', isSearch: true}},
       {key: 'updatedAt', colWidth: '120', title: '更新时间', type: 'text', isCheck: true},
     ],
     // 配置项（必传）
@@ -100,19 +100,8 @@ const state = reactive({
       isRefresh: true, // 是否显示刷新
       fixed: 'right', // 固定操作列
       operationWith: 200, // 固定操作列宽度
-      notPage: false, // 是否不分页
+      notPage: true, // 是否不分页
     },
-    // 搜索表单，动态生成（传空数组时，将不显示搜索，注意格式）
-    search: [
-      {label: '标题', prop: 'title', placeholder: '请输入标题', required: false, type: 'input'},
-      {
-        label: '创建时间',
-        prop: 'createdAt',
-        placeholder: '请选择',
-        required: false,
-        type: 'date',
-      },
-    ],
     // 搜索参数（不用传，用于分页、搜索时传给后台的值，`getTableData` 中使用）
     param: {
       page: 1,
@@ -131,13 +120,11 @@ const onOpenEdit = (type, row) => {
   tableDialogRef.value.openDialog(type, row);
 };
 // 初始化列表数据
-const getTableData = async (param) => {
-  state.tableData.config.loading = true;
+const getTableData = (param) => withTableLoading(state.tableData.config, async () => {
   let response = await api.list(param);
   state.tableData.data = response?.data?.list;
   state.tableData.config.total = response?.data?.total;
-  state.tableData.config.loading = false;
-};
+});
 // 搜索点击时表单回调
 const onSearch = (data) => {
   Object.entries(data).forEach(([key, value]) => {

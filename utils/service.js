@@ -50,14 +50,17 @@ export default function createService(module, headers = {}) {
             if (method.toUpperCase() === 'GET' && params) {
                 let queryParams = new URLSearchParams();
                 Object.entries(params).forEach(([paramKey, paramValue]) => {
-                    finalUrl = finalUrl.replace(`:${paramKey}`, paramValue);
-                    queryParams.append(paramKey, paramValue);
+                    // 跳过空值，避免拼接出无意义的查询项
+                    if (paramValue === undefined || paramValue === null || paramValue === '') return;
+                    // 对象/数组（如 __search）序列化为 JSON 字符串放入 url
+                    const value = typeof paramValue === 'object' ? JSON.stringify(paramValue) : paramValue;
+                    queryParams.append(paramKey, value);
                 });
 
-                // 添加判断条件
-                if (!isEmptyObject(params)) {
+                const queryString = queryParams.toString();
+                if (queryString) {
                     const delimiter = finalUrl.includes('?') ? '&' : '?';
-                    finalUrl += delimiter + queryParams.toString();
+                    finalUrl += delimiter + queryString;
                 }
             }
 

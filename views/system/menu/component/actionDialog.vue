@@ -8,6 +8,7 @@
             class="table-demo"
             @pageChange="onTablePageChange"
             @delRow="onTableDelRow"
+            @search="onSearch"
             row-key="id"
             :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
         >
@@ -42,9 +43,10 @@
 <script setup name="systemMenuActionDialog">
 import {defineAsyncComponent, reactive, ref} from 'vue';
 import {getDict} from "/@/utils/dict.js";
-import {actionIsLinkEnum, actionTypeDict, isConfirmDict} from '/@/dict/menu/index.js';
+import {actionIsLinkEnum, actionTypeDict, isConfirmDict, btnTypeDict, btnStyleDict, btnSizeDict} from '/@/dict/menu/index.js';
 import {menuApi} from '/@/api/menu';
 import {ElMessage} from 'element-plus';
+import {withTableLoading} from '/@/utils/commonFunction';
 
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
@@ -69,8 +71,8 @@ const state = reactive({
     header: [
       { key: 'id', colWidth: '', title: 'ID', type: 'text', isCheck: true },
       { key: 'pid', colWidth: '100', title: '父级id', type: 'text', isCheck: true },
-      { key: 'label', colWidth: '100', title: '功能名称', type: 'text', isCheck: true },
-      { key: 'authValue', colWidth: '120', title: '权限标识', type: 'text', isCheck: true },
+      { key: 'label', colWidth: '100', title: '功能名称', type: 'text', isCheck: true, search: {type: 'input', isSearch: true} },
+      { key: 'authValue', colWidth: '120', title: '权限标识', type: 'text', isCheck: true, search: {type: 'input', isSearch: true} },
       { key: 'parent', colWidth: '100', title: '父级功能', type: 'text', isCheck: true,
         render: (scope) => {
           return scope.row?.parent?.label
@@ -80,20 +82,23 @@ const state = reactive({
       { key: 'type', colWidth: '100', title: '类型', type: 'text', isCheck: true,
         render: (scope) => {
           return getDict(actionTypeDict, scope.row?.type);
-        }
+        },
+        search: {type: 'select', options: actionTypeDict, isSearch: true},
       },
-      { key: 'btnType', colWidth: '100', title: '按钮类型', type: 'text', isCheck: true },
-      { key: 'btnStyle', colWidth: '100', title: '按钮样式', type: 'text', isCheck: true },
-      { key: 'btnSize', colWidth: '100', title: '按钮大小', type: 'text', isCheck: true },
+      { key: 'btnType', colWidth: '100', title: '按钮类型', type: 'text', isCheck: true, search: {type: 'select', options: btnTypeDict, isSearch: true} },
+      { key: 'btnStyle', colWidth: '100', title: '按钮样式', type: 'text', isCheck: true, search: {type: 'select', options: btnStyleDict, isSearch: true} },
+      { key: 'btnSize', colWidth: '100', title: '按钮大小', type: 'text', isCheck: true, search: {type: 'select', options: btnSizeDict, isSearch: true} },
       { key: 'isConfirm', colWidth: '100', title: '是否确认', type: 'text', isCheck: true,
         render: (scope) => {
           return getDict(isConfirmDict, scope.row?.isConfirm);
-        }
+        },
+        search: {type: 'select', options: isConfirmDict, isSearch: true},
       },
       { key: 'isLink', colWidth: '120', title: '是否为链接', type: 'text', isCheck: true,
         render: (scope) => {
           return getDict(actionIsLinkEnum, scope.row?.isLink);
-        }
+        },
+        search: {type: 'select', options: actionIsLinkEnum, isSearch: true},
       },
       { key: 'sort', colWidth: '', title: '排序', type: 'text', isCheck: true },
       {key: 'actionRoles', colWidth: '100', width: '', height: '40', title: '功能角色', isCheck: true,
@@ -101,6 +106,7 @@ const state = reactive({
           return scope.row?.actionRoles?.length > 0 ? scope.row?.actionRoles.map(item => item.name).join(',') : '';
         }
       },
+      {key: 'status', colWidth: '100', title: '状态', type: 'text', isCheck: true, search: {type: 'select', options: [{label: '启用', value: 1}, {label: '禁用', value: 2}], isSearch: true}},
       {key: 'createdAt', colWidth: '100', title: '创建时间', type: 'text', isCheck: true},
       {key: 'updatedAt', colWidth: '100', title: '更新时间', type: 'text', isCheck: true},
     ],
@@ -119,8 +125,6 @@ const state = reactive({
       operationWith: 200, // 固定操作列宽度
       notPage: false, // 是否不分页
     },
-    // 搜索表单，动态生成（传空数组时，将不显示搜索，注意格式）
-    search: [],
     // 搜索参数、搜索时传给后台的值,`getTableData` 中使用）
     param: {},
     // 打印标题
@@ -143,9 +147,14 @@ const onTablePageChange = (page) => {
   state.tableData.param.pageSize = page.pageSize;
   getTableData(state.tableData.param);
 };
+// 搜索回调
+const onSearch = (val) => {
+  state.tableData.param = { ...val, page: 1, pageSize: state.tableData.param.pageSize || 10 };
+  getTableData(state.tableData.param);
+};
 // 打开弹窗
 const openDialog = (row) => {
-  state.tableData.param.menuId = row.id;
+  state.tableData.param = { menuId: row.id, page: 1, pageSize: 10 };
   getTableData(state.tableData.param);
   state.dialog.isShowDialog = true;
 };
@@ -157,14 +166,15 @@ const onOpenEdit = (type, row) => {
 const onTableDelRow = async (row) => {
   await api.deleteAction({id: row.id, menuId: row.menuId, actionId: row.id});
   ElMessage.success(`删除成功！`);
-  state.tableData.data = state.tableData.data.filter((item) => item.id !== row.id);
+  getTableData(state.tableData.param);
 };
 // 初始化列表数据
-const getTableData = async (param) => {
+const getTableData = (param) => {
   param.menuId = param.menuId ?? props.menuId;
-  const data = await api.actionList(param);
-  state.tableData.data = data.data?.list;
-  state.tableData.config.loading = false;
+  return withTableLoading(state.tableData.config, async () => {
+    const data = await api.actionList(param);
+    state.tableData.data = data.data?.list;
+  });
 };
 // 暴露变量
 defineExpose({

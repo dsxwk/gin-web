@@ -28,6 +28,7 @@ import {storeToRefs} from 'pinia';
 import {useRoutesList} from '/@/stores/routesList';
 import {i18n} from '/@/static/i18n';
 import {articleApi} from '/@/api/article';
+import {isPublishDict} from '/@/dict/article/index.js';
 import {ElMessage} from 'element-plus';
 import ConfigForm from '/@/components/form/index.vue';
 
@@ -56,7 +57,8 @@ const state = reactive({
       name: '',
     },
     content: '',
-    tag: '',
+    tag: [],
+    isPublish: 0,
   },
   dialog: {
     isShowDialog: false,
@@ -88,11 +90,31 @@ const getFormData = () => {
     {
       label: '标签',
       prop: 'tag',
-      type: 'input',
+      type: 'select',
       span: 24,
+      options: () => {
+        return (Array.isArray(state.ruleForm.tag) ? state.ruleForm.tag : []).map((v) => ({ label: v, value: v }));
+      },
       attrs: {
-        placeholder: '请输入标签',
-        clearable: true
+        placeholder: '输入内容后回车添加标签',
+        clearable: true,
+        class: 'w100',
+        multiple: true,
+        filterable: true,
+        allowCreate: true,
+        defaultFirstOption: true,
+      }
+    },
+    {
+      label: '是否发布',
+      prop: 'isPublish',
+      type: 'select',
+      span: 24,
+      options: isPublishDict,
+      attrs: {
+        placeholder: '请选择是否发布',
+        clearable: true,
+        class: 'w100',
       }
     },
     {
@@ -179,7 +201,8 @@ const openDialog = async (type, row) => {
       name: '',
     },
     content: '',
-    tag: '',
+    tag: [],
+    isPublish: 0,
   };
   if (type === 'edit') {
     const data = await detail(row.id);
@@ -188,6 +211,7 @@ const openDialog = async (type, row) => {
         state.ruleForm[key] = data[key];
       }
     });
+    state.ruleForm.tag = Array.isArray(data.tag) ? data.tag : [];
     state.dialog.title = '修改文章';
     state.dialog.submitTxt = '修 改';
   } else {
@@ -216,6 +240,7 @@ const onSubmit = async () => {
     if (!valid) return;
 
     const submitData = { ...state.ruleForm };
+    submitData.tag = Array.isArray(submitData.tag) ? submitData.tag : [];
 
     let msg = '';
     if (state.dialog.type === 'add') {

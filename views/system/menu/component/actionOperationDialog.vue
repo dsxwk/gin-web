@@ -58,7 +58,7 @@ const state = reactive({
     authValue: "", // 权限标识
     isLink: false, // 是否为链接 1=是 2=否
     sort: 0, // 排序
-    actionRoles: [], // 功能角色
+    roleActions: [], // 角色功能
     status: 1, // 状态 1=启用 2=禁用
   },
   superiorData: [], // 父级选项
@@ -248,8 +248,8 @@ const formData = computed(() => [
     ],
   },
   {
-    label: '功能角色',
-    prop: 'actionRoles',
+    label: '角色功能',
+    prop: 'roleActions',
     type: 'select',
     col: 12,
     options: () => {
@@ -290,11 +290,13 @@ const openDialog = async (type, row) => {
     } else {
       const actionRes = await api.actionList({menuId: props.menuId});
       const actionData = actionRes.data?.list || [];
-      state.superiorData = Array.isArray(actionData) ? actionData.map(item => ({
-        id: item.id,
-        label: item.label,
-        title: item.label
-      })) : []; // 父级选项
+      state.superiorData = Array.isArray(actionData) ? actionData
+        .filter(item => type !== 'edit' || item.id !== row?.id)
+        .map(item => ({
+          id: item.id,
+          label: item.label,
+          title: item.label
+        })) : []; // 父级选项
     }
   } catch (e) {
     state.superiorData = [];
@@ -314,7 +316,7 @@ const openDialog = async (type, row) => {
     authValue: "", // 权限标识
     isLink: false, // 是否为链接 1=是 2=否
     sort: 0, // 排序
-    actionRoles: [],
+    roleActions: [],
   };
   if (type === 'edit') {
     if (!row?.id) {
@@ -330,7 +332,7 @@ const openDialog = async (type, row) => {
       });
       state.ruleForm.superior = [data.pid];
       // 设置角色 ID 数组用于 select 默认选中
-      state.selectedRoleIds = state.ruleForm.actionRoles?.map(item => item.roleId) || [];
+      state.selectedRoleIds = state.ruleForm.roleActions?.map(item => item.roleId) || [];
       state.dialog.title = '修改功能';
       state.dialog.submitTxt = '修 改';
     } catch (e) {
@@ -362,7 +364,7 @@ const onCancel = () => {
 const onSubmit = async () => {
   const submitData = { ...state.ruleForm };
 
-  submitData.actionRoles = submitData.actionRoles?.map(roleId => {
+  submitData.roleActions = submitData.roleActions?.map(roleId => {
     const role = state.roles.find(r => r.id === roleId);
     return {
       roleId: roleId,
@@ -371,13 +373,15 @@ const onSubmit = async () => {
     };
   }) ?? [];
 
-  if (submitData.parent && submitData.parent.length > 0) {
-    submitData.pid = submitData.parent[0];
+  if (submitData.superior && submitData.superior.length > 0) {
+    submitData.pid = submitData.superior[0];
   } else {
     submitData.pid = 0;
   }
 
   submitData.sort = parseInt(submitData.sort) || 0;
+
+  submitData.isLink = submitData.isLink === true ? 1 : 2;
 
   dialogFormRef.value.validate(async (valid) => {
     if (!valid) return;
@@ -389,7 +393,6 @@ const onSubmit = async () => {
     } else {
       submitData.menuId = props.menuId;
       submitData.id = props.row.id;
-      submitData.actionId = props.row.id;
       await api.updateAction(submitData);
       msg = '更新成功';
     }
@@ -402,7 +405,8 @@ const onSubmit = async () => {
 const detail = async (id) => {
   const res = await api.actionDetail({id: id, menuId: props.menuId});
   const data = res.data;
-  data.actionRoles = Array.isArray(data.actionRoles) ? data.actionRoles.map(role => role.roleId) : [];
+  data.roleActions = Array.isArray(data.roleActions) ? data.roleActions.map(role => role.roleId) : [];
+  data.isLink = data.isLink === 1;
   return data;
 };
 // 获取角色

@@ -255,6 +255,17 @@
 	overflow-y: auto;
 	overflow-x: hidden;
 }
+/*
+ * 弹窗打开时禁止 body 因滚动条补偿被改窄导致的页面右移
+ * 本项目 body 为 overflow:hidden，滚动发生在内部 el-scrollbar 上，
+ * 而 Element Plus 的 lock-scroll 会把 body 的 width 改成 calc(100% - 滚动条宽度)，
+ * 在此场景下没有意义，反而导致打开/关闭弹窗时整页向右偏移。
+ * 注：width 是 Element Plus 通过 JS 写在 body 上的「行内样式」，
+ * CSS 选择器优先级低于行内样式，只能用 !important 覆盖，此处为正当用法。
+ */
+.el-popup-parent--hidden {
+	width: 100% !important;
+}
 
 /* Card 卡片
 ------------------------------- */

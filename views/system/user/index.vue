@@ -1,7 +1,6 @@
 <template>
   <div class="table-demo-container layout-padding">
     <div class="table-demo-padding layout-padding-view layout-padding-auto">
-      <TableSearch :search="state.tableData.search" @search="onSearch"/>
       <Table
           ref="tableRef"
           v-bind="state.tableData"
@@ -10,6 +9,7 @@
           @pageChange="onTablePageChange"
           @sortHeader="onSortHeader"
           @selection-change="onSelectionChange"
+          @search="onSearch"
       >
         <template #tools>
           <div class="table-tool">
@@ -45,10 +45,10 @@ import {ElMessage, ElMessageBox} from 'element-plus';
 import {userApi} from '/@/api/user';
 import {genderDict, statusDict} from '/@/dict/user/index.js';
 import {getDict} from '/@/utils/dict.js';
+import {withTableLoading} from '/@/utils/commonFunction';
 
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
-const TableSearch = defineAsyncComponent(() => import('/@/components/table/component/search.vue'));
 const UserDialog = defineAsyncComponent(() => import('/@/views/system/user/component/dialog.vue'));
 
 const api = userApi();
@@ -63,9 +63,9 @@ const state = reactive({
     // 表头内容（必传，注意格式）
     header: [
       {key: 'id', colWidth: '', title: 'ID', type: 'text', isCheck: true},
-      {key: 'fullName', colWidth: '100', title: '姓名', type: 'text', isCheck: true},
+      {key: 'fullName', colWidth: '100', title: '姓名', type: 'text', isCheck: true, search: {type: 'input', required: true, isSearch: true}},
       {key: 'avatar', colWidth: '100', title: '头像', type: 'image', isCheck: true},
-      {key: 'username', colWidth: '100', title: '用户名', type: 'text', isCheck: true},
+      {key: 'username', colWidth: '100', title: '用户名', type: 'text', isCheck: true, search: {type: 'input', isSearch: true}},
       {key: 'email', colWidth: '100', title: '邮箱', type: 'text', isCheck: true},
       {key: 'password', colWidth: '100', title: '密码', type: 'text', isCheck: true},
       {key: 'nickname', colWidth: '100', title: '昵称', type: 'text', isCheck: true},
@@ -73,7 +73,8 @@ const state = reactive({
         key: 'gender', colWidth: '100', title: '性别', type: 'text', isCheck: true,
         render: (scope) => {
           return getDict(genderDict, scope.row?.gender);
-        }
+        },
+        search: {type: 'select', options: genderDict, isSearch: true},
       },
       {key: 'age', colWidth: '100', width: '70', height: '40', title: '年龄', type: 'text', isCheck: true},
       {key: 'status', colWidth: '100', width: '70', height: '40', title: '状态', isCheck: true,
@@ -86,7 +87,7 @@ const state = reactive({
           return scope.row?.userRoles?.length > 0 ? scope.row?.userRoles.map(item => item.name).join(',') : '';
         }
       },
-      {key: 'createdAt', colWidth: '120', title: '创建时间', type: 'text', isCheck: true},
+      {key: 'createdAt', colWidth: '120', title: '创建时间', type: 'text', isCheck: true, search: {type: 'daterange', rangeProp: ['createdAtStart', 'createdAtEnd'], isSearch: true}},
       {key: 'updatedAt', colWidth: '120', title: '更新时间', type: 'text', isCheck: true},
     ],
     // 配置项（必传）
@@ -104,27 +105,6 @@ const state = reactive({
       operationWith: 200, // 固定操作列宽度
       notPage: false, // 是否不分页
     },
-    // 搜索表单，动态生成（传空数组时，将不显示搜索，注意格式）
-    search: [
-      {label: '姓名', prop: 'fullName', placeholder: '请输入姓名', required: true, type: 'input'},
-      {label: '用户名', prop: 'username', placeholder: '请输入用户名', required: false, type: 'input'},
-      {
-        label: '性别',
-        prop: 'gender',
-        placeholder: '请选择',
-        required: false,
-        type: 'select',
-        options: genderDict,
-      },
-      {
-        label: '创建时间',
-        prop: 'createdAt',
-        rangeProp: ['createdAtStart', 'createdAtEnd'],
-        placeholder: '请选择',
-        required: false,
-        type: 'daterange',
-      },
-    ],
     // 搜索参数（不用传，用于分页、搜索时传给后台的值，`getTableData` 中使用）
     param: {
       page: 1,
@@ -143,13 +123,11 @@ const onOpenEditUser = (type, row) => {
   userDialogRef.value.openDialog(type, row);
 };
 // 初始化列表数据
-const getTableData = async (param) => {
-  state.tableData.config.loading = true;
+const getTableData = (param) => withTableLoading(state.tableData.config, async () => {
   let response = await api.list(param);
   state.tableData.data = response?.data?.list;
   state.tableData.config.total = response?.data?.total;
-  state.tableData.config.loading = false;
-};
+});
 // 搜索点击时表单回调
 const onSearch = (data) => {
   Object.entries(data).forEach(([key, value]) => {

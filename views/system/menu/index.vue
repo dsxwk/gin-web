@@ -1,7 +1,6 @@
 <template>
   <div class="table-demo-container layout-padding">
     <div class="table-demo-padding layout-padding-view layout-padding-auto">
-      <TableSearch :search="state.tableData.search" @search="onSearch"/>
       <Table
           dev
           ref="tableRef"
@@ -9,6 +8,7 @@
           @delRow="onTableDelRow"
           @sortHeader="onSortHeader"
           @pageChange="onTablePageChange"
+          @search="onSearch"
           row-key="id"
           :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
       >
@@ -34,7 +34,7 @@
           </div>
         </template>
         <template #dialog>
-          <MenuDialog ref="menuDialogRef" @refresh="getTableData(state.tableData.param)" :row="listRow" :menuId="menuId"/>
+          <MenuDialog ref="menuDialogRef" @refresh="getTableData(state.tableData.param)" :row="listRow" :menuId="menuId" :menu-data="state.tableData.data"/>
           <ActionDialog ref="menuActionDialogRef" :menuId="menuId" />
         </template>
       </Table>
@@ -51,10 +51,10 @@ import {i18n} from '/@/static/i18n';
 import {getDict} from '/@/utils/dict.js';
 import {isHideDict, isLinkDict} from '/@/dict/menu';
 import {initBackEndControlRoutes} from '/@/router/backEnd.js';
+import {withTableLoading} from '/@/utils/commonFunction';
 
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
-const TableSearch = defineAsyncComponent(() => import('/@/components/table/component/search.vue'));
 const MenuDialog = defineAsyncComponent(() => import('/@/views/system/menu/component/dialog.vue'));
 const ActionDialog = defineAsyncComponent(() => import('/@/views/system/menu/component/actionDialog.vue'));
 
@@ -82,16 +82,13 @@ const state = reactive({
       {
         key: 'meta.icon', colWidth: '100', title: '菜单图标', isCheck: true,
         render: (scope) => {
-          /*return h('el-icon', {
-            class: scope.row?.meta?.icon
-          });*/
           return h(SvgIcon, {
             name: scope.row?.meta?.icon,
           });
         },
       },
       {key: 'path', colWidth: '100', title: '路由路径', type: 'text', isCheck: true},
-      {key: 'name', colWidth: '100', title: '路由名称', type: 'text', isCheck: true},
+      {key: 'name', colWidth: '100', title: '路由名称', type: 'text', isCheck: true, search: {type: 'input', isSearch: true}},
       {key: 'redirect', colWidth: '', title: '重定向', type: 'text', isCheck: true},
       {
         key: 'isLink', colWidth: '100', title: '是否外链', type: 'text', isCheck: true,
@@ -105,7 +102,8 @@ const state = reactive({
         key: 'meta.isHide', colWidth: '100', width: '70', height: '40', title: '是否隐藏', type: 'select', isCheck: true,
         render: (scope) => {
           return getDict(isHideDict, scope.row?.meta?.isHide);
-        }
+        },
+        search: {type: 'select', prop: 'meta.isHide', options: [{label: '隐藏', value: 1}, {label: '不隐藏', value: 2}], isSearch: true},
       },
       {key: 'roleMenus', colWidth: '100', width: '70', height: '40', title: '菜单角色', isCheck: true,
         render: (scope) => {
@@ -130,21 +128,6 @@ const state = reactive({
       operationWith: 200, // 固定操作列宽度
       notPage: true, // 是否不分页
     },
-    // 搜索表单，动态生成（传空数组时，将不显示搜索，注意格式）
-    search: [
-      {label: '路由名称', prop: 'name', placeholder: '请输入路由名称', required: false, type: 'input'},
-      {
-        label: '是否隐藏',
-        prop: 'meta.isHide',
-        placeholder: '请选择',
-        required: false,
-        type: 'select',
-        options: [
-          {label: '隐藏', value: 1},
-          {label: '不隐藏', value: 2},
-        ],
-      },
-    ],
     // 搜索参数、搜索时传给后台的值,`getTableData` 中使用）
     param: {},
     // 打印标题
@@ -166,15 +149,13 @@ const onOpenMenuAction = (row) => {
   menuActionDialogRef.value.openDialog(row);
 }
 // 初始化列表数据
-const getTableData = async (param) => {
-  state.tableData.config.loading = true;
+const getTableData = (param) => withTableLoading(state.tableData.config, async () => {
   param.page = 1;
   param.pageSize = 10;
   param.notPage = true;
   let response = await api.list(param);
   state.tableData.data = response?.data?.list;
-  state.tableData.config.loading = false;
-};
+});
 // 搜索点击时表单回调
 const onSearch = (data) => {
   Object.entries(data).forEach(([key, value]) => {

@@ -24,8 +24,6 @@
 
 <script setup name="systemMenuDialog">
 import {onMounted, reactive, ref, markRaw, nextTick} from 'vue';
-import {storeToRefs} from 'pinia';
-import {useRoutesList} from '/@/stores/routesList';
 import {i18n} from '/@/static/i18n';
 import {ElMessage} from 'element-plus';
 import {menuApi} from '/@/api/menu';
@@ -43,6 +41,10 @@ const props = defineProps({
   menuId: {
     type: Number,
     default: 0
+  },
+  menuData: {
+    type: Array,
+    default: () => []
   }
 });
 
@@ -53,8 +55,6 @@ const api = menuApi();
 
 // 定义变量内容
 const dialogFormRef = ref();
-const stores = useRoutesList();
-const { routesList } = storeToRefs(stores);
 const state = reactive({
   roles: [],
 	// 参数请参考 `/router/route.js` 中的 `dynamicRoutes` 路由菜单格式
@@ -103,7 +103,7 @@ const formData = ref([
     },
     props: {
       checkStrictly: true,
-      value: 'path',
+      value: 'id',
       label: 'title',
     },
     attrs: {
@@ -282,20 +282,25 @@ const formData = ref([
   }
 ]);
 const rules = {};
-// 获取 pinia 中的路由
-const getData = (routes) => {
-	const arr = [];
-	routes.map((val) => {
-		val['title'] = i18n.global.t(val.meta?.title);
-		arr.push({ ...val });
-		if (val.children) getData(val.children);
-	});
-	return arr;
+// 由菜单列表数据构建级联树（含 i18n 标题），不修改源数据
+const buildMenuTree = (list) => {
+  return (Array.isArray(list) ? list : []).map((item) => {
+    const node = {
+      ...item,
+      title: i18n.global.t(item.meta?.title || ''),
+    };
+    if (item.children && item.children.length) {
+      node.children = buildMenuTree(item.children);
+    } else {
+      delete node.children;
+    }
+    return node;
+  });
 };
-// 递归查找父级 path 数组
+// 递归查找从根到目标节点的 id 路径
 function findMenuPathById(data, targetId, pathArr = []) {
   for (const item of data) {
-    const newPathArr = [...pathArr, item.path];
+    const newPathArr = [...pathArr, item.id];
     if (item.id === targetId) {
       return newPathArr;
     }
@@ -306,25 +311,14 @@ function findMenuPathById(data, targetId, pathArr = []) {
   }
   return [];
 }
-// 递归查找菜单项
-function findMenuByPath(data, path) {
-  for (const item of data) {
-    if (item.path === path) return item;
-    if (item.children && item.children.length) {
-      const found = findMenuByPath(item.children, path);
-      if (found) return found;
-    }
-  }
-  return null;
-}
 // 打开弹窗
 const openDialog = async (type, row) => {
   // 确保角色数据已加载
   if (!state.roles || state.roles.length === 0) {
     await getRoles();
   }
-  // 每次打开弹窗都从Pinia获取最新菜单数据
-  state.menuData = getData(routesList.value);
+  // 每次打开弹窗都基于最新的菜单列表数据构建级联树
+  state.menuData = buildMenuTree(props.menuData);
   
   state.ruleForm = {
     menuSuperior: [], // 上级菜单
@@ -416,9 +410,7 @@ const onSubmit = async () => {
     const submitData = { ...state.ruleForm };
 
     if (submitData.menuSuperior && submitData.menuSuperior.length > 0) {
-      const lastPath = submitData.menuSuperior[submitData.menuSuperior.length - 1];
-      const menu = findMenuByPath(state.menuData, lastPath);
-      submitData.pid = menu ? menu.id : 0;
+      submitData.pid = submitData.menuSuperior[submitData.menuSuperior.length - 1];
     } else {
       submitData.pid = 0;
     }
@@ -468,7 +460,7 @@ const detail = async (id) => {
 // 页面加载时
 onMounted(() => {
   getRoles();
-	state.menuData = getData(routesList.value);
+	state.menuData = buildMenuTree(props.menuData);
 });
 // 暴露变量
 defineExpose({
