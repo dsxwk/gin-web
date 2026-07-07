@@ -35,7 +35,7 @@ onMounted(() => {
   }, 0);
 });
 </script>
-<style scoped>
+<style scoped lang="scss">
 * {
   margin: 0;
   padding: 0;
