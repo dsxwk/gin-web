@@ -87,7 +87,7 @@ const state = reactive({
           });
         },
       },
-      {key: 'path', colWidth: '100', title: '路由路径', type: 'text', isCheck: true},
+      {key: 'path', colWidth: '100', title: '路由路径', type: 'text', isCheck: true, search: {type: 'input', isSearch: true}},
       {key: 'name', colWidth: '100', title: '路由名称', type: 'text', isCheck: true, search: {type: 'input', isSearch: true}},
       {key: 'redirect', colWidth: '', title: '重定向', type: 'text', isCheck: true},
       {

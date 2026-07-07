@@ -33,7 +33,7 @@
 </template>
 
 <script setup name="systemDictDialog">
-import {reactive, ref, markRaw, nextTick} from 'vue';
+import {reactive, ref, markRaw, nextTick, computed, watch} from 'vue';
 import {ElMessage} from 'element-plus';
 import {dictApi} from '/@/api/dict';
 import ConfigForm from '/@/components/form/index.vue';
@@ -79,37 +79,41 @@ const state = reactive({
 		submitTxt: '',
 	},
 });
-const formData = ref([
+const cascaderLabel = markRaw(CascaderLabel);
+// 是否为子级字典（选择了上级字典）：子级时"标识(name)"取父级标识且不可修改
+const isChildDict = computed(() => Array.isArray(state.ruleForm.dictSuperior) && state.ruleForm.dictSuperior.length > 0);
+const formData = computed(() => [
   {
-    label: '英文名称',
+    label: '标识',
     prop: 'name',
     type: 'input',
     col: 12,
     attrs: {
-      placeholder: '请输入字典名称(英文)',
-      clearable: true
+      placeholder: '请输入字典标识',
+      clearable: true,
+      disabled: isChildDict.value,
     },
     rules: [
       {
         required: true,
-        message: "请输入字典名称(英文)",
+        message: "请输入字典标识",
         trigger: "blur"
       },
     ]
   },
   {
-    label: '中文名称',
+    label: '名称',
     prop: 'title',
     type: 'input',
     col: 12,
     attrs: {
-      placeholder: '请输入字典名称(中文)',
+      placeholder: '请输入字典名称',
       clearable: true
     },
     rules: [
       {
         required: true,
-        message: "请输入字典名称(中文)",
+        message: "请输入字典名称",
         trigger: "blur"
       },
     ]
@@ -142,7 +146,7 @@ const formData = ref([
       clearable: true,
       class: 'w100',
     },
-    slotDefault: markRaw(CascaderLabel),
+    slotDefault: cascaderLabel,
   },
   {
     label: '状态',
@@ -210,6 +214,25 @@ function findPathById(data, targetId, pathArr = []) {
   }
   return [];
 }
+// 递归按 id 查找节点
+function findNodeById(data, targetId) {
+  for (const item of data) {
+    if (item.id === targetId) return item;
+    if (item.children && item.children.length) {
+      const found = findNodeById(item.children, targetId);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+// 选择上级字典后，标识(name)默认取父级标识且不可修改；顶级时可自由编辑
+watch(() => state.ruleForm.dictSuperior, (val) => {
+  if (Array.isArray(val) && val.length > 0) {
+    const parentId = val[val.length - 1];
+    const parent = findNodeById(props.dictData, parentId);
+    if (parent) state.ruleForm.name = parent.name;
+  }
+});
 // 新增一行扩展字段
 const addExtendRow = () => {
   state.extendRows.push({ key: '', value: '' });
@@ -229,8 +252,8 @@ const extendToRows = (extend) => {
 const openDialog = async (type, row) => {
   state.ruleForm = {
     dictSuperior: [], // 上级字典
-    name: '', // 字典名称(英文)
-    title: '', // 字典名称(中文)
+    name: '', // 标识
+    title: '', // 名称
     value: '', // 映射值
     sort: 0, // 排序
     extend: {}, // 扩展字段
