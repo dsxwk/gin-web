@@ -11,6 +11,22 @@
             size: 'default'
           }"
       >
+        <template #roleMenus>
+          <div class="role-menu-tree">
+            <el-tree
+                ref="menuTreeRef"
+                :data="state.menuTree"
+                show-checkbox
+                node-key="id"
+                :props="{ children: 'children' }"
+                default-expand-all
+            >
+              <template #default="{ data }">
+                <span>{{ getMenuTitle(data) }}</span>
+              </template>
+            </el-tree>
+          </div>
+        </template>
       </ConfigForm>
       <template #footer>
         <span class="dialog-footer">
@@ -24,7 +40,9 @@
 <script setup name="systemRoleDialog">
 import {computed, nextTick, onMounted, reactive, ref} from 'vue';
 import {roleApi} from '/@/api/role';
+import {menuApi} from '/@/api/menu';
 import {ElMessage} from 'element-plus';
+import {i18n} from '/@/static/i18n';
 import ConfigForm from '/@/components/form/index.vue';
 import {statusDict} from '/@/dict/role';
 
@@ -37,7 +55,9 @@ const props = defineProps({
 });
 const emit = defineEmits(['refresh']);
 const dialogFormRef = ref();
+const menuTreeRef = ref();
 const api = roleApi();
+const menuApiSvc = menuApi();
 
 const state = reactive({
   ruleForm: {
@@ -45,6 +65,7 @@ const state = reactive({
     desc: '',
     status: 1,
   },
+  menuTree: [], // 菜单树（不分页）
   dialog: {
     isShowDialog: false,
     type: 'add',
@@ -52,6 +73,25 @@ const state = reactive({
     submitTxt: ''
   }
 });
+
+// 菜单节点标题（meta.title 为 i18n key）
+const getMenuTitle = (data) => i18n.global.t(data?.meta?.title || '');
+// 获取菜单树（不分页）
+const loadMenuTree = async () => {
+  const res = await menuApiSvc.list({page: 1, pageSize: 10, notPage: true});
+  state.menuTree = res?.data?.list || [];
+};
+// 收集叶子节点 id（无 children 的节点），父子联动模式下仅用叶子回显，父级由 el-tree 推算
+const collectLeafIds = (list, set = new Set()) => {
+  (Array.isArray(list) ? list : []).forEach((node) => {
+    if (node.children && node.children.length) {
+      collectLeafIds(node.children, set);
+    } else {
+      set.add(node.id);
+    }
+  });
+  return set;
+};
 
 const getFormData = computed(() => {
   return [
@@ -87,6 +127,12 @@ const getFormData = computed(() => {
       type: 'radio',
       options: statusDict
     },
+    {
+      label: '菜单权限',
+      prop: 'roleMenus',
+      slot: 'roleMenus',
+      span: 24,
+    },
   ];
 });
 const rules = {};
@@ -97,6 +143,9 @@ const openDialog = async (type, row) => {
     desc: '',
     status: 1,
   };
+  // 加载菜单树（不分页）
+  await loadMenuTree();
+  let checkedMenuIds = [];
   if (type === 'edit') {
     try {
       const data = await detail(row.id);
@@ -105,6 +154,12 @@ const openDialog = async (type, row) => {
           state.ruleForm[key] = data[key];
         }
       });
+      // 默认选中角色已存在的菜单（父子联动：仅勾选叶子，父级由 el-tree 自动推算）
+      const leafSet = collectLeafIds(state.menuTree);
+      const storedMenuIds = Array.isArray(data.roleMenus)
+        ? data.roleMenus.map((rm) => rm.menuId ?? rm.menu?.id).filter((v) => v != null)
+        : [];
+      checkedMenuIds = storedMenuIds.filter((id) => leafSet.has(id));
       state.dialog.title = '修改角色';
       state.dialog.submitTxt = '修 改';
     } catch (e) {
@@ -120,12 +175,12 @@ const openDialog = async (type, row) => {
   // 清空表单，此项需加表单验证才能使用
   await nextTick(() => {
     dialogFormRef.value && dialogFormRef.value.resetFields();
+    menuTreeRef.value && menuTreeRef.value.setCheckedKeys(checkedMenuIds);
   });
 };
 
 const closeDialog = () => {
   state.dialog.isShowDialog = false;
-  state.selectedRoleIds = [];
 };
 
 const onCancel = () => {
@@ -137,6 +192,11 @@ const onSubmit = async () => {
     if (!valid) return;
 
     const submitData = { ...state.ruleForm };
+    // 勾选的菜单转为 [{roleId, menuId}]；父子联动下需带上半选的父级，保证侧边栏能渲染整棵菜单
+    const checkedKeys = menuTreeRef.value ? menuTreeRef.value.getCheckedKeys() : [];
+    const halfCheckedKeys = menuTreeRef.value ? menuTreeRef.value.getHalfCheckedKeys() : [];
+    const roleId = state.dialog.type === 'edit' ? props.row.id : 0;
+    submitData.roleMenus = [...checkedKeys, ...halfCheckedKeys].map((menuId) => ({ roleId, menuId }));
 
     let msg = '';
     if (state.dialog.type === 'add') {
@@ -167,5 +227,13 @@ defineExpose({openDialog});
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
+}
+.role-menu-tree {
+  width: 100%;
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
+  padding: 6px 10px;
 }
 </style>
