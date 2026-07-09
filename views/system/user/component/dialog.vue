@@ -22,10 +22,7 @@
   </div>
 </template>
 <script setup name="systemUserDialog">
-import {nextTick, onMounted, reactive, ref} from 'vue';
-import {storeToRefs} from 'pinia';
-import {useRoutesList} from '/@/stores/routesList';
-import {i18n} from '/@/static/i18n';
+import {nextTick, reactive, ref} from 'vue';
 import {userApi} from '/@/api/user';
 import {ElMessage} from 'element-plus';
 import ConfigForm from '/@/components/form/index.vue';
@@ -40,13 +37,10 @@ const props = defineProps({
 });
 const emit = defineEmits(['refresh']);
 const dialogFormRef = ref();
-const stores = useRoutesList();
-const {routesList} = storeToRefs(stores);
 const api = userApi();
 
 const state = reactive({
   roles: [],
-  selectedRoleIds: [],
   ruleForm: {
     fullName: '',
     avatar: '',
@@ -189,17 +183,10 @@ const getFormData = () => {
   ];
 };
 const rules = {};
-const getData = (routes) => {
-  const arr = [];
-  routes.forEach((val) => {
-    val['title'] = i18n.global.t(val.meta?.title);
-    arr.push({...val});
-    if (val.children) getData(val.children);
-  });
-  return arr;
-};
 
 const openDialog = async (type, row) => {
+  // 先加载角色下拉数据，保证弹窗打开时用户角色有可选项
+  await getRoles();
   state.ruleForm = {
     fullName: '',
     avatar: '',
@@ -220,7 +207,6 @@ const openDialog = async (type, row) => {
           state.ruleForm[key] = data[key];
         }
       });
-      state.selectedRoleIds = row.userRoles?.map(item => item.roleId) || [];
     } catch (e) {
       ElMessage.error('获取用户详情失败');
       return;
@@ -229,7 +215,6 @@ const openDialog = async (type, row) => {
     state.dialog.title = '修改用户';
     state.dialog.submitTxt = '修 改';
   } else {
-    state.selectedRoleIds = [];
     state.dialog.title = '新增用户';
     state.dialog.submitTxt = '新 增';
   }
@@ -243,7 +228,6 @@ const openDialog = async (type, row) => {
 
 const closeDialog = () => {
   state.dialog.isShowDialog = false;
-  state.selectedRoleIds = [];
 };
 
 const onCancel = () => {
@@ -283,7 +267,7 @@ const onSubmit = async () => {
 
 const getRoles = async () => {
   const data = await api.roleList({page: 1, pageSize: 10, notPage: true});
-  state.roles = data.data?.list;
+  state.roles = data.data?.list || [];
 };
 // 详情
 const detail = async (id) => {
@@ -293,10 +277,6 @@ const detail = async (id) => {
 
   return data;
 };
-onMounted(() => {
-  getRoles();
-  state.menuData = getData(routesList.value);
-});
 
 defineExpose({openDialog});
 </script>
