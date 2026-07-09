@@ -71,7 +71,7 @@ const state = reactive({
     data: [],
     // 表头内容（必传，注意格式）
     header: [
-      {key: 'id', colWidth: '', title: 'ID', type: 'text', isCheck: true},
+      {key: 'id', colWidth: '190', title: 'ID', type: 'text', isCheck: true},
       {key: 'pid', colWidth: '100', title: '父级id', type: 'text', isCheck: true},
       {
         key: 'meta.title', colWidth: '100', title: '菜单名称', type: 'text', isCheck: true,
