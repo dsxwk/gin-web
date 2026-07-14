@@ -14,20 +14,15 @@
       >
         <template #tools>
           <div class="table-tool">
-            <el-button v-auth="'sys.dic.add'" size="default" type="primary" @click="onOpenAddDict('add')">
-              <el-icon>
-                <ele-FolderAdd/>
-              </el-icon>
-              新增字典
-            </el-button>
+            <AuthButton auth="sys.dic.add" @click="onOpenAddDict('add')"/>
           </div>
         </template>
         <template #operation="{row}">
           <div class="flex items-center">
-            <el-button v-auth="'sys.dic.edit'" type="primary" size="small" @click="onOpenEditDict('edit', row)">编辑</el-button>
+            <AuthButton auth="sys.dic.edit" @click="onOpenEditDict('edit', row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onTableDelRow(row)">
               <template #reference>
-                <el-button v-auth="'sys.dic.del'" size="small" type="danger">删除</el-button>
+                <AuthButton auth="sys.dic.del"/>
               </template>
             </el-popconfirm>
           </div>
@@ -49,6 +44,7 @@ import {withTableLoading} from '/@/utils/commonFunction';
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
 const DictDialog = defineAsyncComponent(() => import('/@/views/system/dic/component/dialog.vue'));
+import AuthButton from '/@/components/authButton/index.vue';
 
 const api = dictApi();
 // 扩展字段展示：空对象/空数组不展示，非空对象转为紧凑 JSON

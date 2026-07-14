@@ -137,39 +137,15 @@ const emit = defineEmits(['update:model'])
                 v-bind="getAttrs(item)"
                 v-on="item.events || {}"
             >
-              <!-- 渲染 options -->
-              <template v-if="item.options">
-                <template
-                    v-for="opt in getOptions(item)"
-                    :key="opt.value"
-                >
-                  <el-option
-                      v-if="item.type === 'select'"
-                      :label="opt.label"
-                      :value="opt.value"
-                  />
-                  <el-radio
-                      v-else-if="item.type === 'radio'"
-                      :value="opt.value"
-                      :label="opt.label"
-                  />
-                  <el-checkbox
-                      v-else-if="item.type === 'checkbox'"
-                      :value="opt.value"
-                      :label="opt.label"
-                  />
+              <template v-if="['select', 'radio', 'checkbox'].includes(item.type) && item.options">
+                <template v-for="opt in getOptions(item)" :key="opt.value">
+                  <el-option v-if="item.type === 'select'" :label="opt.label" :value="opt.value" />
+                  <el-radio v-else-if="item.type === 'radio'" :value="opt.value" :label="opt.label" />
+                  <el-checkbox v-else-if="item.type === 'checkbox'" :value="opt.value" :label="opt.label" />
                 </template>
               </template>
-              <!-- cascader 默认插槽 -->
-              <template
-                  v-if="item.type === 'cascader' && item.slotDefault"
-                  #default="{ node, data }"
-              >
-                <component
-                    :is="item.slotDefault"
-                    :node="node"
-                    :data="data"
-                />
+              <template v-if="item.type === 'cascader' && item.slotDefault" #default="{ node, data }">
+                <component :is="item.slotDefault" :node="node" :data="data" />
               </template>
             </component>
             <slot

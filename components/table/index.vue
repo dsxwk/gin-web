@@ -219,6 +219,7 @@ const searchList = computed(() => {
 				rangeOperator: search.rangeOperator || ['>=', '<='],
 				isSearch: search.isSearch !== undefined ? search.isSearch : true,
 				_searchKey: item.key,
+				showShortcuts: search.showShortcuts,
 			};
 		});
 });

@@ -13,27 +13,24 @@
       >
         <template #tools>
           <div class="table-tool">
-            <el-button v-auth="'sys.user.add'" size="default" type="primary" @click="onOpenAddUser('add')">
-              <el-icon>
-                <ele-FolderAdd/>
-              </el-icon>
-              新增用户
-            </el-button>
-            <el-button v-auth="'sys.user.batchDel'" size="default" type="danger" @click="batchDelete">批量删除</el-button>
+            <AuthButton auth="sys.user.add" @click="onOpenAddUser('add')"/>
+            <AuthButton auth="sys.user.import" @click="onOpenImport"/>
+            <AuthButton auth="sys.user.batchDel" @click="batchDelete"/>
           </div>
         </template>
         <template #operation="{row}">
           <div class="flex items-center">
-            <el-button v-auth="'sys.user.edit'" :disabled="row.id === 1" size="small" type="primary" @click="onOpenEditUser('edit', row)">编辑</el-button>
+            <AuthButton auth="sys.user.edit" :disabled="row.id === 1" @click="onOpenEditUser('edit', row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onTableDelRow(row)">
               <template #reference>
-                <el-button v-auth="'sys.user.del'" :disabled="row.id === 1" size="small" type="danger">删除</el-button>
+                <AuthButton auth="sys.user.del" :disabled="row.id === 1"/>
               </template>
             </el-popconfirm>
           </div>
         </template>
         <template #dialog>
           <UserDialog ref="userDialogRef" @refresh="getTableData(state.tableData.param)" :row="listRow"/>
+          <UserImportDialog ref="userImportDialogRef" @refresh="getTableData(state.tableData.param)"/>
         </template>
       </Table>
     </div>
@@ -50,11 +47,14 @@ import {withTableLoading} from '/@/utils/commonFunction';
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
 const UserDialog = defineAsyncComponent(() => import('/@/views/system/user/component/dialog.vue'));
+const UserImportDialog = defineAsyncComponent(() => import('/@/views/system/user/component/importDialog.vue'));
+import AuthButton from '/@/components/authButton/index.vue';
 
 const api = userApi();
 // 定义变量内容
 const tableRef = ref();
 const userDialogRef = ref();
+const userImportDialogRef = ref();
 const listRow = ref();
 const state = reactive({
   tableData: {
@@ -122,6 +122,10 @@ const onOpenEditUser = (type, row) => {
   listRow.value = row;
   userDialogRef.value.openDialog(type, row);
 };
+// 打开导入弹窗
+const onOpenImport = () => {
+  userImportDialogRef.value.openDialog();
+};
 // 初始化列表数据
 const getTableData = (param) => withTableLoading(state.tableData.config, async () => {
   let response = await api.list(param);
@@ -162,9 +166,16 @@ const onSelectionChange = (val) => {
 // 批量删除
 const batchDelete = async () => {
   if (state.tableData.selectList.length === 0) return ElMessage.info('请选择数据');
-  ElMessageBox.confirm('确认删除?', '批量删除').then(
-      () => {
-        ElMessage.success(`批量删除成功！${JSON.stringify(state.tableData.selectList)}`);
+  ElMessageBox.confirm('确认删除?', '批量删除', {
+    confirmButtonType: 'primary',
+    cancelButtonType: 'default',
+    buttonSize: 'default',
+  }).then(
+      async () => {
+        await api.batchDelete({ids: state.tableData.selectList});
+        ElMessage.success(`批量删除成功！`);
+        state.tableData.selectList = [];
+        await getTableData(state.tableData.param);
       }
   ).catch(
       () => {

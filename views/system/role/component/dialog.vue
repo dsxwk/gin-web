@@ -12,6 +12,11 @@
           }"
       >
         <template #roleMenus>
+          <div class="role-action-toolbar" v-if="state.menuTree.length">
+            <el-checkbox v-model="menuCheckAll" :indeterminate="menuCheckIndeterminate" @change="onToggleMenuCheckAll">全选</el-checkbox>
+            <el-button link type="primary" @click="onExpandAllMenus(true)">展开</el-button>
+            <el-button link type="primary" @click="onExpandAllMenus(false)">收起</el-button>
+          </div>
           <div class="role-menu-tree">
             <el-tree
                 ref="menuTreeRef"
@@ -20,11 +25,16 @@
                 node-key="id"
                 :props="{ children: 'children' }"
                 default-expand-all
+                @check="syncMenuCheckAll"
             >
               <template #default="{ data }">
-                <span>{{ getMenuTitle(data) }}</span>
+                <span class="role-tree-node">
+                  <el-tag v-if="data.type === 2" size="small" type="warning" effect="plain">功能</el-tag>
+                  <span>{{ getNodeLabel(data) }}</span>
+                </span>
               </template>
             </el-tree>
+            <el-empty v-if="!state.menuTree.length" description="暂无可配置权限" :image-size="60" />
           </div>
         </template>
       </ConfigForm>
@@ -56,6 +66,8 @@ const props = defineProps({
 const emit = defineEmits(['refresh']);
 const dialogFormRef = ref();
 const menuTreeRef = ref();
+const menuCheckAll = ref(false);
+const menuCheckIndeterminate = ref(false);
 const api = roleApi();
 const menuApiSvc = menuApi();
 
@@ -65,7 +77,7 @@ const state = reactive({
     desc: '',
     status: 1,
   },
-  menuTree: [], // 菜单树（不分页）
+  menuTree: [], // 统一权限树（菜单 type=1 + 功能 type=2）
   dialog: {
     isShowDialog: false,
     type: 'add',
@@ -74,9 +86,14 @@ const state = reactive({
   }
 });
 
-// 菜单节点标题（meta.title 为 i18n key）
-const getMenuTitle = (data) => i18n.global.t(data?.meta?.title || '');
-// 获取菜单树（不分页）
+// 统一权限树节点标题：菜单取 meta.title（i18n key），功能取按钮 label
+const getNodeLabel = (data) => {
+  if (data?.type === 2) {
+    return data?.menuAction?.label || data?.name || '';
+  }
+  return i18n.global.t(data?.meta?.title || '');
+};
+// 获取统一权限树（不分页）
 const loadMenuTree = async () => {
   const res = await menuApiSvc.list({page: 1, pageSize: 10, notPage: true});
   state.menuTree = res?.data?.list || [];
@@ -128,7 +145,7 @@ const getFormData = computed(() => {
       options: statusDict
     },
     {
-      label: '菜单权限',
+      label: '权限',
       prop: 'roleMenus',
       slot: 'roleMenus',
       span: 24,
@@ -143,7 +160,9 @@ const openDialog = async (type, row) => {
     desc: '',
     status: 1,
   };
-  // 加载菜单树（不分页）
+  menuCheckAll.value = false;
+  menuCheckIndeterminate.value = false;
+  // 加载统一权限树（不分页）
   await loadMenuTree();
   let checkedMenuIds = [];
   if (type === 'edit') {
@@ -154,7 +173,7 @@ const openDialog = async (type, row) => {
           state.ruleForm[key] = data[key];
         }
       });
-      // 默认选中角色已存在的菜单（父子联动：仅勾选叶子，父级由 el-tree 自动推算）
+      // 默认选中角色已存在的权限（父子联动：仅勾选叶子，父级由 el-tree 自动推算）
       const leafSet = collectLeafIds(state.menuTree);
       const storedMenuIds = Array.isArray(data.roleMenus)
         ? data.roleMenus.map((rm) => rm.menuId ?? rm.menu?.id).filter((v) => v != null)
@@ -176,6 +195,8 @@ const openDialog = async (type, row) => {
   await nextTick(() => {
     dialogFormRef.value && dialogFormRef.value.resetFields();
     menuTreeRef.value && menuTreeRef.value.setCheckedKeys(checkedMenuIds);
+    // 回显后同步"全选"勾选/半选状态
+    syncMenuCheckAll();
   });
 };
 
@@ -187,16 +208,43 @@ const onCancel = () => {
   closeDialog();
 };
 
+// 权限：全选 / 取消全选
+const onToggleMenuCheckAll = (val) => {
+  if (!menuTreeRef.value) return;
+  const leafIds = val ? [...collectLeafIds(state.menuTree)] : [];
+  menuTreeRef.value.setCheckedKeys(leafIds);
+  menuCheckIndeterminate.value = false;
+};
+// 权限：根据当前勾选同步全选/半选状态
+const syncMenuCheckAll = () => {
+  const total = collectLeafIds(state.menuTree).size;
+  const checked = menuTreeRef.value ? menuTreeRef.value.getCheckedKeys(true).length : 0;
+  menuCheckAll.value = total > 0 && checked === total;
+  menuCheckIndeterminate.value = checked > 0 && checked < total;
+};
+// 权限：展开 / 收起全部
+const onExpandAllMenus = (expand) => {
+  const treeRef = menuTreeRef.value;
+  if (!treeRef || !treeRef.store) return;
+  Object.values(treeRef.store.nodesMap).forEach((node) => {
+    node.expanded = expand;
+  });
+};
+
 const onSubmit = async () => {
   dialogFormRef.value.validate(async (valid) => {
     if (!valid) return;
 
     const submitData = { ...state.ruleForm };
-    // 勾选的菜单转为 [{roleId, menuId}]；父子联动下需带上半选的父级，保证侧边栏能渲染整棵菜单
+    const roleId = state.dialog.type === 'edit' ? props.row.id : 0;
+    // 勾选的权限转为 [{roleId, menuId, name}]；父子联动下需带上半选父级，保证侧边栏能渲染整棵菜单
     const checkedKeys = menuTreeRef.value ? menuTreeRef.value.getCheckedKeys() : [];
     const halfCheckedKeys = menuTreeRef.value ? menuTreeRef.value.getHalfCheckedKeys() : [];
-    const roleId = state.dialog.type === 'edit' ? props.row.id : 0;
-    submitData.roleMenus = [...checkedKeys, ...halfCheckedKeys].map((menuId) => ({ roleId, menuId }));
+    submitData.roleMenus = [...checkedKeys, ...halfCheckedKeys].map((menuId) => ({
+      roleId,
+      menuId,
+      name: state.ruleForm.name,
+    }));
 
     let msg = '';
     if (state.dialog.type === 'add') {
@@ -230,10 +278,21 @@ defineExpose({openDialog});
 }
 .role-menu-tree {
   width: 100%;
-  max-height: 280px;
+  max-height: 360px;
   overflow: auto;
   border: 1px solid var(--el-border-color);
   border-radius: 4px;
   padding: 6px 10px;
+}
+.role-action-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.role-tree-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 </style>

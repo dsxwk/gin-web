@@ -39,8 +39,10 @@ export async function initBackEndControlRoutes() {
     if (res.data.length <= 0) return Promise.resolve(true);
     // 存储接口原始路由（未处理component），根据需求选择使用
     useRequestOldRoutes().setRequestOldRoutes(JSON.parse(JSON.stringify(res.data)));
+    // 统一权限树 -> 路由树：剔除功能节点(type=2)、将 meta 内的 path/redirect/component 提到顶层
+    const routeTree = formatBackEndRoutes(res.data);
     // 处理路由（component），替换 dynamicRoutes（/@/router/route）第一个顶级 children 的路由
-    dynamicRoutes[0].children = await backEndComponent(res.data);
+    dynamicRoutes[0].children = await backEndComponent(routeTree);
     // 添加动态路由
     await setAddRoute();
     // 设置路由到 pinia routesList 中（已处理成多级嵌套路由）及缓存多级嵌套数组处理后的一维数组
@@ -106,6 +108,63 @@ export async function getBackEndControlRoutes() {
     }
     const roles = userInfo?.userRoles?.map((item) => item.roleId);
     return await api.roleMenu({roleId: roles.join(',')});
+}
+
+/**
+ * 统一权限树 -> Vue Router 路由树
+ * @description 后端返回的是「菜单(type=1) + 功能(type=2)」统一权限树，且 path/redirect/component 位于 meta 内。
+ *              路由只需要菜单节点：剔除功能节点（其下的菜单子节点上提到父级），并把 meta 内的字段提到顶层，
+ *              以满足 formatTwoStageRoutes 对 v.path / v.name / v.component 的要求。
+ * @param routes 后端返回的统一权限树
+ * @returns 只含菜单节点、字段已提层的路由树
+ */
+export function formatBackEndRoutes(routes, parentIsFunction = false) {
+    const result = [];
+    (Array.isArray(routes) ? routes : []).forEach((item) => {
+        const isFunction = item.type === 2;
+        // 先递归处理子节点（功能节点会在递归中被剔除、其菜单子节点被上提），并告知子节点其父级是否为功能
+        const children = formatBackEndRoutes(item.children, isFunction);
+        // 功能节点(type=2)不是路由，跳过自身，仅保留其下的菜单子节点
+        if (isFunction) {
+            result.push(...children);
+            return;
+        }
+        // 菜单节点：把其下的功能节点(type=2)收集为 authBtnList，供 v-auth 按钮权限使用
+        const meta = {...(item.meta || {})};
+        meta.authBtnList = collectAuthBtns(item.children);
+        // 父级是功能的菜单：仍注册为可访问路由，但不在左侧菜单栏展示（由对应功能页内部打开）
+        // isHide 约定 1=隐藏、2=不隐藏（formatTwoStageRoutes 会将其转为布尔）
+        if (parentIsFunction) meta.isHide = 1;
+        result.push({
+            ...item,
+            path: item.path ?? meta.path,
+            name: item.name,
+            redirect: item.redirect ?? meta.redirect,
+            component: item.component ?? meta.component,
+            meta,
+            children: children.length ? children : undefined,
+        });
+    });
+    return result;
+}
+
+/**
+ * 收集菜单节点下的功能(type=2)按钮权限
+ * @description 仅收集当前菜单直接/间接挂载的功能节点；遇到子菜单(type=1)则停止下探（子菜单是独立页面，有自己的 authBtnList）。
+ * @param list 当前节点的 children
+ * @returns 形如 [{authValue, ...}] 的按钮权限列表，authValue 供 v-auth 指令匹配
+ */
+function collectAuthBtns(list) {
+    const btns = [];
+    (Array.isArray(list) ? list : []).forEach((n) => {
+        if (n.type !== 2) return;
+        const action = Array.isArray(n.menuActions) ? n.menuActions[0] : n.menuAction || null;
+        const authValue = action?.authValue || n.name;
+        if (authValue) btns.push({...(action || {}), authValue});
+        // 仅继续下探功能子节点，遇到子菜单则不再纳入本菜单
+        btns.push(...collectAuthBtns((n.children || []).filter((c) => c.type === 2)));
+    });
+    return btns;
 }
 
 /**

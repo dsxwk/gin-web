@@ -92,13 +92,19 @@ export function formatTwoStageRoutes(arr) {
     return newArr;
 }
 
+// 设置浏览器标签标题
+const setBrowserTitle = (route) => {
+    const title = route.meta?.title ? i18n.global.t(route.meta.title) : '';
+    document.title = title || 'Gin Admin 后台管理';
+};
+
 // 路由加载前
 router.beforeEach(async (to, from, next) => {
     NProgress.configure({showSpinner: false});
     if (to.meta.title) NProgress.start();
-    document.title = i18n.global.t(to.meta.title) || 'Gin Admin 后台管理';
     const token = Session.get('token');
     if (to.path === '/login' && !token) {
+        setBrowserTitle(to);
         next();
         NProgress.done();
     } else {
@@ -115,12 +121,15 @@ router.beforeEach(async (to, from, next) => {
             if (routesList.value.length === 0) {
                 if (isRequestRoutes) {
                     // 后端控制路由：路由数据初始化，防止刷新时丢失
+                    // 此时动态路由尚未注册，to 会匹配到 404 catch-all，故不在此处设置标题，
+                    // 避免刷新时标签标题闪现 "Not Found"，等重定向到真实路由后再设置
                     await initBackEndControlRoutes();
                     // 解决刷新时，一直跳 404 页面问题，关联问题 No match found for location with path 'xxx'
                     // to.query 防止页面刷新时，普通路由带参数时，参数丢失。动态路由（xxx/:id/:name"）isDynamic 无需处理
                     next({path: to.path, query: to.query});
                 }
             } else {
+                setBrowserTitle(to);
                 next();
             }
         }

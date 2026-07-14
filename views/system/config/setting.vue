@@ -68,7 +68,7 @@
         </el-tab-pane>
       </el-tabs>
       <div class="config-footer" v-if="state.categories.length">
-        <el-button type="primary" @click="onSave">保 存</el-button>
+        <el-button size="default" type="primary" @click="onSave">保 存</el-button>
       </div>
       <el-empty v-if="!state.loading && !state.categories.length" description="暂无配置" />
     </div>

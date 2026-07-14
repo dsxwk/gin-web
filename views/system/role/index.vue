@@ -13,21 +13,15 @@
       >
         <template #tools>
           <div class="table-tool">
-            <el-button v-auth="'sys.role.add'" size="default" type="primary" @click="onOpenAddRole('add')">
-              <el-icon>
-                <ele-FolderAdd/>
-              </el-icon>
-              新增角色
-            </el-button>
-            <el-button v-auth="'sys.user.batchDel'" size="default" type="danger" @click="batchDelete">批量删除</el-button>
+            <AuthButton auth="sys.role.add" @click="onOpenAddRole('add')"/>
           </div>
         </template>
         <template #operation="{row}">
           <div class="flex items-center">
-            <el-button v-auth="'sys.role.edit'" size="small" type="primary" @click="onOpenEditRole('edit', row)">编辑</el-button>
+            <AuthButton auth="sys.role.edit" @click="onOpenEditRole('edit', row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onTableDelRow(row)">
               <template #reference>
-                <el-button v-auth="'sys.role.del'" :disabled="row.id === 1" size="small" type="danger">删除</el-button>
+                <AuthButton auth="sys.role.del" :disabled="row.id === 1"/>
               </template>
             </el-popconfirm>
           </div>
@@ -50,6 +44,7 @@ import {withTableLoading} from '/@/utils/commonFunction';
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
 const RoleDialog = defineAsyncComponent(() => import('/@/views/system/role/component/dialog.vue'));
+import AuthButton from '/@/components/authButton/index.vue';
 
 const api = roleApi();
 // 定义变量内容
@@ -138,19 +133,6 @@ const onTablePageChange = (page) => {
 // 表格多选改变时，用于导出
 const onSelectionChange = (val) => {
   state.tableData.selectList = val.map(item => item.id);
-};
-// 批量删除
-const batchDelete = async () => {
-  if (state.tableData.selectList.length === 0) return ElMessage.info('请选择数据');
-  ElMessageBox.confirm('确认删除?', '批量删除').then(
-      () => {
-        ElMessage.success(`批量删除成功！${JSON.stringify(state.tableData.selectList)}`);
-      }
-  ).catch(
-      () => {
-        ElMessage.info('已取消');
-      }
-  );
 };
 // 拖动显示列排序回调
 const onSortHeader = (data) => {

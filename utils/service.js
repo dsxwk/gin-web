@@ -46,8 +46,9 @@ export default function createService(module, headers = {}) {
                 });
             }
 
-            // 当 method 为 GET 时才拼接查询参数
-            if (method.toUpperCase() === 'GET' && params) {
+            // GET / DELETE 时把剩余 params 拼成查询参数（路径参数已在上面被移除）
+            const upperMethod = method.toUpperCase();
+            if ((upperMethod === 'GET' || upperMethod === 'DELETE') && params) {
                 let queryParams = new URLSearchParams();
                 Object.entries(params).forEach(([paramKey, paramValue]) => {
                     // 跳过空值，避免拼接出无意义的查询项

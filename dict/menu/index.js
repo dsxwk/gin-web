@@ -1,4 +1,13 @@
 /**
+ * 节点类型（统一权限树：菜单 / 功能）
+ * @type {[{label: string, value: number},{label: string, value: number}]}
+ */
+export const menuTypeDict = [
+    { label: '菜单', value: 1 },
+    { label: '功能', value: 2 },
+];
+
+/**
  * 是否外链
  * @type {[{label: string, value: number},{label: string, value: number}]}
  */

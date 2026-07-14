@@ -12,20 +12,15 @@
       >
         <template #tools>
           <div class="table-tool">
-            <el-button v-auth="'sys.configCategory.add'" size="default" type="primary" @click="onOpenAdd('add')">
-              <el-icon>
-                <ele-FolderAdd/>
-              </el-icon>
-              新增分类
-            </el-button>
+            <AuthButton auth="sys.configCategory.add" @click="onOpenAdd('add')"/>
           </div>
         </template>
         <template #operation="{row}">
           <div class="flex items-center">
-            <el-button v-auth="'sys.configCategory.edit'" type="primary" size="small" @click="onOpenEdit('edit', row)">编辑</el-button>
+            <AuthButton auth="sys.configCategory.edit" @click="onOpenEdit('edit', row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onTableDelRow(row)">
               <template #reference>
-                <el-button v-auth="'sys.configCategory.del'" size="small" type="danger">删除</el-button>
+                <AuthButton auth="sys.configCategory.del"/>
               </template>
             </el-popconfirm>
           </div>
@@ -51,6 +46,7 @@ import {withTableLoading} from '/@/utils/commonFunction';
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
 const CategoryDialog = defineAsyncComponent(() => import('/@/views/system/config/category/component/dialog.vue'));
+import AuthButton from '/@/components/authButton/index.vue';
 
 const api = configCategoryApi();
 // 定义变量内容

@@ -330,7 +330,7 @@ const openDialog = async (type, row) => {
           state.ruleForm[key] = data[key];
         }
       });
-      state.ruleForm.superior = [data.pid];
+      state.ruleForm.superior = (data.pid && data.pid !== props.menuId) ? [data.pid] : [];
       // 设置角色 ID 数组用于 select 默认选中
       state.selectedRoleIds = state.ruleForm.roleActions?.map(item => item.roleId) || [];
       state.dialog.title = '修改功能';
@@ -376,7 +376,8 @@ const onSubmit = async () => {
   if (submitData.superior && submitData.superior.length > 0) {
     submitData.pid = submitData.superior[0];
   } else {
-    submitData.pid = 0;
+    // 未选上级功能时，功能直接挂在当前菜单下（功能为 type=2 的 menu 节点，父级由 menu.pid 表达）
+    submitData.pid = props.menuId || 0;
   }
 
   submitData.sort = parseInt(submitData.sort) || 0;
@@ -393,6 +394,7 @@ const onSubmit = async () => {
     } else {
       submitData.menuId = props.menuId;
       submitData.id = props.row.id;
+      submitData.actionId = props.row.id;
       await api.updateAction(submitData);
       msg = '更新成功';
     }

@@ -68,6 +68,26 @@ export function userApi() {
                     value: true
                 }
             },
+            import: {
+                name: '导入用户',
+                url: '/user/import',
+                method: 'post',
+                params: {},
+                token: {
+                    name: 'token',
+                    value: true
+                }
+            },
+            batchDelete: {
+                name: '批量删除用户',
+                url: '/user/batch-delete',
+                method: 'post',
+                params: {},
+                token: {
+                    name: 'token',
+                    value: true
+                }
+            },
         }
     );
 }

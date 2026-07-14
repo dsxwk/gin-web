@@ -8,7 +8,8 @@ import {Session} from '/@/utils/storage';
  */
 export const useUserInfo = defineStore('userInfo', {
 	state: () => ({
-		userInfos: {
+		// 刷新页面时 pinia 会重置，从缓存回填用户信息，避免头像/用户名等丢失
+		userInfos: Session.get('userInfo') || {
 			username: '',
 			avatar: '',
 			time: 0,
@@ -20,13 +21,6 @@ export const useUserInfo = defineStore('userInfo', {
 		async setUserInfos(userInfo) {
 			Session.set('userInfo', userInfo);
 			this.userInfos = userInfo;
-			// 存储用户信息到浏览器缓存
-			// if (Session.get('userInfo')) {
-			// 	this.userInfos = Session.get('userInfo');
-			// } else {
-			// 	// this.userInfos = await this.getApiUserInfo();
-			// 	this.userInfos = {};
-			// }
 		},
 		// 模拟接口数据
 		// https://gitee.com/lyt-top/vue-next-admin/issues/I5F1HP

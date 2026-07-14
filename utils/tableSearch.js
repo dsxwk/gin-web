@@ -42,14 +42,19 @@ export const formatSearchItem = (item, value) => {
 	if (!column) return [];
 	const type = item.type || 'input';
 
-	// 区间类型（daterange 或显式声明 rangeOperator 的数组值）
-	if (type === 'daterange' || (Array.isArray(value) && item.rangeOperator)) {
+	// 区间类型（daterange、datetimerange 使用 between）
+	if (type === 'daterange' || type === 'datetimerange') {
 		const [start, end] = value;
-		const [startOp, endOp] = item.rangeOperator || ['>=', '<='];
-		const conditions = [];
-		if (!isEmptySearchValue(start)) conditions.push({ [column]: [startOp, start] });
-		if (!isEmptySearchValue(end)) conditions.push({ [column]: [endOp, end] });
-		return conditions;
+		if (!isEmptySearchValue(start) && !isEmptySearchValue(end)) {
+			return [{ [column]: ['between', [start, end]] }];
+		}
+		if (!isEmptySearchValue(start)) {
+			return [{ [column]: ['>=', start] }];
+		}
+		if (!isEmptySearchValue(end)) {
+			return [{ [column]: ['<=', end] }];
+		}
+		return [];
 	}
 
 	// 数组值（多选）默认使用 in
@@ -75,8 +80,8 @@ export const buildConditions = (form = {}, searchConfig = []) => {
 	const conditions = [];
 	(searchConfig || []).forEach((item) => {
 		if (!item) return;
-		// daterange 的表单值存放在 rangeProp.join('_') 这个 key 上
-		const key = item.type === 'daterange' && item.rangeProp && item.rangeProp.length ? item.rangeProp.join('_') : item.prop;
+		// daterange、datetimerange 的表单值存放在 rangeProp.join('_') 这个 key 上
+		const key = (item.type === 'daterange' || item.type === 'datetimerange') && item.rangeProp && item.rangeProp.length ? item.rangeProp.join('_') : item.prop;
 		conditions.push(...formatSearchItem(item, form[key]));
 	});
 	return conditions;

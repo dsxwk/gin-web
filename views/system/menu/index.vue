@@ -14,28 +14,22 @@
       >
         <template #tools>
           <div class="table-tool">
-            <el-button v-auth="'sys.menu.add'" size="default" type="primary" @click="onOpenAddMenu('add')">
-              <el-icon>
-                <ele-FolderAdd/>
-              </el-icon>
-              新增菜单
-            </el-button>
+            <AuthButton auth="sys.menu.add" @click="onOpenAddMenu('add')"/>
           </div>
         </template>
         <template #operation="{row}">
-          <div class="flex items-center" v-auths="['sys.menu.edit','sys.menu.action','sys.menu.del']">
-            <el-button v-auth="'sys.menu.edit'" type="primary" size="small" @click="onOpenEditMenu('edit', row)">编辑</el-button>
-            <el-button v-auth="'sys.menu.action'" type="primary" size="small" @click="onOpenMenuAction(row)">功能</el-button>
+          <div class="flex items-center" v-auths="['sys.menu.edit','sys.menu.add','sys.menu.del']">
+            <AuthButton auth="sys.menu.edit" @click="onOpenEditMenu('edit', row)"/>
+            <AuthButton auth="sys.menu.addChildren" @click="onOpenAddMenu('add', row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onTableDelRow(row)">
               <template #reference>
-                <el-button v-auth="'sys.menu.del'" size="small" type="danger">删除</el-button>
+                <AuthButton auth="sys.menu.del"/>
               </template>
             </el-popconfirm>
           </div>
         </template>
         <template #dialog>
-          <MenuDialog ref="menuDialogRef" @refresh="getTableData(state.tableData.param)" :row="listRow" :menuId="menuId" :menu-data="state.tableData.data"/>
-          <ActionDialog ref="menuActionDialogRef" :menuId="menuId" />
+          <MenuDialog ref="menuDialogRef" @refresh="getTableData(state.tableData.param)" :menu-data="state.tableData.data"/>
         </template>
       </Table>
     </div>
@@ -49,63 +43,84 @@ import {menuApi} from '/@/api/menu';
 import SvgIcon from '/@/components/svgIcon/index.vue';
 import {i18n} from '/@/static/i18n';
 import {getDict} from '/@/utils/dict.js';
-import {isHideDict, isLinkDict} from '/@/dict/menu';
+import {isHideDict} from '/@/dict/menu';
 import {initBackEndControlRoutes} from '/@/router/backEnd.js';
 import {withTableLoading} from '/@/utils/commonFunction';
 
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
 const MenuDialog = defineAsyncComponent(() => import('/@/views/system/menu/component/dialog.vue'));
-const ActionDialog = defineAsyncComponent(() => import('/@/views/system/menu/component/actionDialog.vue'));
+import AuthButton from '/@/components/authButton/index.vue';
 
 const api = menuApi();
 // 定义变量内容
 const tableRef = ref();
 const menuDialogRef = ref();
-const menuActionDialogRef = ref();
-const menuId = ref();
-const listRow = ref();
 const state = reactive({
   tableData: {
     // 列表数据（必传）
     data: [],
     // 表头内容（必传，注意格式）
     header: [
-      {key: 'id', colWidth: '190', title: 'ID', type: 'text', isCheck: true},
-      {key: 'pid', colWidth: '100', title: '父级id', type: 'text', isCheck: true},
+      {key: 'id', colWidth: '200', title: 'ID', type: 'text', isCheck: true},
+      {key: 'pid', colWidth: '90', title: '父级id', type: 'text', isCheck: true},
       {
-        key: 'meta.title', colWidth: '100', title: '菜单名称', type: 'text', isCheck: true,
+        key: 'type', colWidth: '80', title: '类型', isCheck: true,
+        render: (scope) => (scope.row?.type === 2 ? '功能' : '菜单'),
+      },
+      {
+        key: 'meta.title', colWidth: '140', title: '名称', isCheck: true,
         render: (scope) => {
+          // 功能节点（type=2）meta 为 null，取按钮 label；菜单节点取 i18n(meta.title)
+          if (scope.row?.type === 2) {
+            return scope.row?.menuAction?.label || scope.row?.name || '';
+          }
           return i18n.global.t(scope.row?.meta?.title || '');
         }
       },
       {
+        key: 'sort', colWidth: '90', title: '排序', isCheck: true,
+      },
+      {
         key: 'meta.icon', colWidth: '100', title: '菜单图标', isCheck: true,
         render: (scope) => {
+          if (!scope.row?.meta?.icon) return '';
           return h(SvgIcon, {
             name: scope.row?.meta?.icon,
           });
         },
       },
-      {key: 'path', colWidth: '100', title: '路由路径', type: 'text', isCheck: true, search: {type: 'input', isSearch: true}},
-      {key: 'name', colWidth: '100', title: '路由名称', type: 'text', isCheck: true, search: {type: 'input', isSearch: true}},
-      {key: 'redirect', colWidth: '', title: '重定向', type: 'text', isCheck: true},
       {
-        key: 'isLink', colWidth: '100', title: '是否外链', type: 'text', isCheck: true,
-        render: (scope) => {
-          return getDict(isLinkDict, scope.row?.isLink);
-        }
+        key: 'meta.path', colWidth: '120', title: '路由路径', isCheck: true,
+        render: (scope) => scope.row?.meta?.path || '',
+        search: {type: 'input', prop: 'meta.path', isSearch: true},
       },
-      {key: 'component', colWidth: '100', title: '组件路径', type: 'text', isCheck: true},
-      {key: 'meta.isLink', colWidth: '100', width: '70', height: '40', title: '链接地址', type: 'text', isCheck: true},
+      {key: 'name', colWidth: '150', title: '路由|权限标识', type: 'text', isCheck: true, search: {type: 'input', isSearch: true}},
       {
-        key: 'meta.isHide', colWidth: '100', width: '70', height: '40', title: '是否隐藏', type: 'select', isCheck: true,
+        key: 'meta.redirect', colWidth: '120', title: '重定向', isCheck: true,
+        render: (scope) => scope.row?.meta?.redirect || '',
+      },
+      {
+        key: 'isLink', colWidth: '90', title: '是否外链', isCheck: true,
+        render: (scope) => (scope.row?.meta?.isLink ? '是' : '否'),
+      },
+      {
+        key: 'meta.component', colWidth: '140', title: '组件路径', isCheck: true,
+        render: (scope) => scope.row?.meta?.component || '',
+      },
+      {
+        key: 'meta.isLink', colWidth: '120', title: '链接地址', isCheck: true,
+        render: (scope) => scope.row?.meta?.isLink || '',
+      },
+      {
+        key: 'meta.isHide', colWidth: '90', title: '是否隐藏', isCheck: true,
         render: (scope) => {
+          if (scope.row?.type === 2) return '';
           return getDict(isHideDict, scope.row?.meta?.isHide);
         },
         search: {type: 'select', prop: 'meta.isHide', options: [{label: '隐藏', value: 1}, {label: '不隐藏', value: 2}], isSearch: true},
       },
-      {key: 'roleMenus', colWidth: '100', width: '70', height: '40', title: '菜单角色', isCheck: true,
+      {key: 'roleMenus', colWidth: '120', title: '角色', isCheck: true,
         render: (scope) => {
           return scope.row?.roleMenus?.length > 0 ? scope.row?.roleMenus.map(item => item.name).join(',') : '';
         }
@@ -125,7 +140,7 @@ const state = reactive({
       isExcelTool: true, // 是否显示导出Excel工具
       isRefresh: true, // 是否显示刷新
       fixed: 'right', // 固定操作列
-      operationWith: 200, // 固定操作列宽度
+      operationWith: 220, // 固定操作列宽度
       notPage: true, // 是否不分页
     },
     // 搜索参数、搜索时传给后台的值,`getTableData` 中使用）
@@ -134,20 +149,14 @@ const state = reactive({
     printName: 'ginBaseAdmin 表格打印演示',
   },
 });
-// 打开新增菜单弹窗
-const onOpenAddMenu = (type) => {
-  menuDialogRef.value.openDialog(type);
-};
-// 打开编辑菜单弹窗
-const onOpenEditMenu = (type, row) => {
-  listRow.value = row;
+// 打开新增弹窗（row 存在时预置为其子级）
+const onOpenAddMenu = (type, row) => {
   menuDialogRef.value.openDialog(type, row);
 };
-// 菜单功能
-const onOpenMenuAction = (row) => {
-  menuId.value = row.id;
-  menuActionDialogRef.value.openDialog(row);
-}
+// 打开编辑弹窗
+const onOpenEditMenu = (type, row) => {
+  menuDialogRef.value.openDialog(type, row);
+};
 // 初始化列表数据
 const getTableData = (param) => withTableLoading(state.tableData.config, async () => {
   param.page = 1;
@@ -196,9 +205,12 @@ onMounted(() => {
   .table-demo-padding {
     padding: 15px;
 
-    .table-demo {
+    // 树形菜单展开后行数较多，容器高度固定且 overflow:hidden，会裁剪下方内容。
+    // 让表格容器占满剩余高度并纵向滚动，保证展开后能滚动查看全部行。
+    :deep(.table-container) {
       flex: 1;
-      overflow: hidden;
+      min-height: 0;
+      overflow-y: auto;
     }
   }
 }

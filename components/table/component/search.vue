@@ -6,25 +6,26 @@
           <template v-if="val.type !== ''">
             <el-form-item
                 :label="val.label"
-                :prop="val.prop"
+                :prop="(val.type === 'daterange' || val.type === 'datetimerange') && val.rangeProp ? val.rangeProp.join('_') : val.prop"
                 :rules="[{ required: val.required, message: `${val.label}不能为空`, trigger: val.type === 'input' ? 'blur' : 'change' }]"
             >
               <el-input v-model="state.form[val.prop]" :placeholder="val.placeholder" clearable v-if="val.type === 'input'" style="width: 100%" />
-              <el-date-picker
+              <DatePicker
                   v-model="state.form[val.prop]"
-                  type="date"
+                  :type="val.type"
                   :placeholder="val.placeholder"
-                  v-else-if="val.type === 'date'"
+                  :show-shortcuts="val.showShortcuts"
                   style="width: 100%"
+                  v-else-if="val.type === 'date' || val.type === 'datetime'"
               />
-              <el-date-picker
+              <DatePicker
                   v-model="state.form[val.rangeProp ? val.rangeProp.join('_') : val.prop]"
-                  type="daterange"
+                  :type="val.type"
                   :start-placeholder="'开始日期'"
                   :end-placeholder="'结束日期'"
-                  v-if="val.type === 'daterange'"
+                  :show-shortcuts="val.showShortcuts"
+                  v-else-if="val.type === 'daterange' || val.type === 'datetimerange'"
                   style="width: 100%"
-                  value-format="YYYY-MM-DD"
               />
               <el-select v-model="state.form[val.prop]" :placeholder="val.placeholder" v-else-if="val.type === 'select'" style="width: 100%">
                 <el-option v-for="item in val.options" :key="item.value" :label="item.label" :value="item.value"> </el-option>
@@ -54,6 +55,7 @@
 <script setup name="tableSearch">
 import { reactive, ref, onMounted, onUnmounted, computed } from 'vue';
 import { buildSearchFromForm, validateSearch } from '/@/utils/tableSearch.js';
+import DatePicker from '/@/components/datePicker/index.vue';
 
 // 定义父组件传过来的值
 const props = defineProps({
@@ -144,8 +146,8 @@ const initFormField = () => {
   if (props.search.length <= 0) return false;
   // props.search.forEach((v) => (state.form[v.prop] = ''));
   props.search.forEach((v) => {
-    if (v.type === 'daterange' && v.rangeProp) {
-      state.form[v.rangeProp.join('_')] = [];
+    if ((v.type === 'daterange' || v.type === 'datetimerange') && v.rangeProp) {
+      state.form[v.rangeProp.join('_')] = null;
     } else {
       state.form[v.prop] = '';
     }

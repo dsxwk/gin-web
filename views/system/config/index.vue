@@ -12,20 +12,15 @@
       >
         <template #tools>
           <div class="table-tool">
-            <el-button v-auth="'sys.config.add'" size="default" type="primary" @click="onOpenAdd('add')">
-              <el-icon>
-                <ele-FolderAdd/>
-              </el-icon>
-              新增配置
-            </el-button>
+            <AuthButton auth="sys.config.add" @click="onOpenAdd('add')"/>
           </div>
         </template>
         <template #operation="{row}">
           <div class="flex items-center">
-            <el-button v-auth="'sys.config.edit'" type="primary" size="small" @click="onOpenEdit('edit', row)">编辑</el-button>
+            <AuthButton auth="sys.config.edit" @click="onOpenEdit('edit', row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onTableDelRow(row)">
               <template #reference>
-                <el-button v-auth="'sys.config.del'" size="small" type="danger">删除</el-button>
+                <AuthButton auth="sys.config.del"/>
               </template>
             </el-popconfirm>
           </div>
@@ -55,6 +50,7 @@ import {withTableLoading} from '/@/utils/commonFunction';
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
 const ConfigDialog = defineAsyncComponent(() => import('/@/views/system/config/component/dialog.vue'));
+import AuthButton from '/@/components/authButton/index.vue';
 
 const api = systemConfigApi();
 const categoryApi = configCategoryApi();

@@ -78,56 +78,6 @@ export function menuApi() {
                     name: 'token',
                     value: true
                 }
-            },
-            actionList: {
-                name: '功能列表',
-                url: '/menu/:menuId/action',
-                method: 'get',
-                params: {},
-                token: {
-                    name: 'token',
-                    value: true
-                }
-            },
-            createAction: {
-                name: '新增功能',
-                url: '/menu/:menuId/action',
-                method: 'post',
-                params: {},
-                token: {
-                    name: 'token',
-                    value: true
-                }
-            },
-            updateAction: {
-                name: '修改功能',
-                url: '/menu/:menuId/action/:id',
-                method: 'put',
-                params: {},
-                token: {
-                    name: 'token',
-                    value: true
-                }
-            },
-            deleteAction: {
-                name: '删除功能',
-                url: '/menu/:menuId/action/:id',
-                method: 'delete',
-                params: {},
-                token: {
-                    name: 'token',
-                    value: true
-                }
-            },
-            actionDetail: {
-                name: '功能详情',
-                url: '/menu/:menuId/action/:id',
-                method: 'get',
-                params: {},
-                token: {
-                    name: 'token',
-                    value: true
-                }
             }
         }
     );
