@@ -125,6 +125,7 @@ gin-web
 # 克隆仓库 https://gitee.com/dsxwk/gin-web.git 
 git clone https://github.com/dsxwk/gin-web.git 
 cd gin-web
+cp .env.development.example .env.development
 
 # 安装依赖
 npm install

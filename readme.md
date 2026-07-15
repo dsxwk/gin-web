@@ -121,6 +121,7 @@ gin-web
 # Clone the repository
 git clone https://github.com/dsxwk/gin-web.git
 cd gin-web
+cp .env.development.example .env.development
 
 # Install dependencies
 npm install
