@@ -1,7 +1,8 @@
 <template>
   <div class="system-config-container layout-padding">
     <div class="system-config-padding layout-padding-view layout-padding-auto" v-loading="state.loading">
-      <el-tabs v-if="state.categories.length" v-model="state.activeTab" class="config-tabs">
+      <div class="config-body">
+        <el-tabs v-if="state.categories.length" v-model="state.activeTab" class="config-tabs">
         <el-tab-pane
             v-for="cat in state.categories"
             :key="cat.id"
@@ -69,6 +70,7 @@
       </el-tabs>
       <div class="config-footer" v-if="state.categories.length">
         <el-button size="default" type="primary" @click="onSave">保 存</el-button>
+      </div>
       </div>
       <el-empty v-if="!state.loading && !state.categories.length" description="暂无配置" />
     </div>
@@ -166,7 +168,7 @@ onMounted(() => {
   .system-config-padding {
     padding: 15px;
 
-    .config-form {
+    .config-body {
       max-width: 720px;
     }
 
@@ -183,7 +185,7 @@ onMounted(() => {
 
     .config-footer {
       margin-top: 20px;
-      padding-left: 120px;
+      text-align: right;
     }
   }
 }

@@ -127,7 +127,8 @@ const formData = computed(() => [
       placeholder: '请输入映射值',
       clearable: true
     },
-    rules: []
+    rules: [],
+    hidden: !isChildDict.value,
   },
   {
     label: '上级字典',
@@ -278,6 +279,10 @@ const openDialog = async (type, row) => {
 		state.dialog.title = '修改字典';
 		state.dialog.submitTxt = '修 改';
 	} else {
+		// 新增：可从父行预设上级（子集）
+		if (row?.id) {
+		  state.ruleForm.dictSuperior = findPathById(props.dictData, row.id);
+		}
 		state.dialog.title = '新增字典';
 		state.dialog.submitTxt = '新 增';
 	}
@@ -305,6 +310,7 @@ const onSubmit = async () => {
     submitData.pid = submitData.dictSuperior[submitData.dictSuperior.length - 1];
   } else {
     submitData.pid = 0; // 顶级字典
+    delete submitData.value; // 顶级字典不传递映射值
   }
 
   submitData.sort = parseInt(submitData.sort) || 0;

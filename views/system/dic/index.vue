@@ -20,6 +20,7 @@
         <template #operation="{row}">
           <div class="flex items-center">
             <AuthButton auth="sys.dic.edit" @click="onOpenEditDict('edit', row)"/>
+            <AuthButton auth="sys.dic.addChildren" @click="onOpenAddSubDict(row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onTableDelRow(row)">
               <template #reference>
                 <AuthButton auth="sys.dic.del"/>
@@ -91,7 +92,7 @@ const state = reactive({
       isExcelTool: true, // 是否显示导出Excel工具
       isRefresh: true, // 是否显示刷新
       fixed: 'right', // 固定操作列
-      operationWith: 200, // 固定操作列宽度
+      operationWith: 220, // 固定操作列宽度
       notPage: true, // 是否不分页
     },
     // 搜索参数（不用传，用于分页、搜索时传给后台的值，`getTableData` 中使用）
@@ -103,6 +104,11 @@ const state = reactive({
 // 打开新增弹窗
 const onOpenAddDict = (type) => {
   dictDialogRef.value.openDialog(type);
+};
+// 打开新增子集
+const onOpenAddSubDict = (row) => {
+  listRow.value = row;
+  dictDialogRef.value.openDialog('add', row);
 };
 // 打开编辑弹窗
 const onOpenEditDict = (type, row) => {
