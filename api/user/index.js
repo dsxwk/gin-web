@@ -1,4 +1,4 @@
-import createService from '/@/utils/service.js';
+﻿import createService from '/@/utils/service.js';
 
 /**
  * 用户
@@ -72,6 +72,16 @@ export function userApi() {
                 name: '导入用户',
                 url: '/user/import',
                 method: 'post',
+                params: {},
+                token: {
+                    name: 'token',
+                    value: true
+                }
+            },
+            password: {
+                name: '修改密码',
+                url: '/user/:id/password',
+                method: 'put',
                 params: {},
                 token: {
                     name: 'token',

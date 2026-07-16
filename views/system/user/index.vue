@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="table-demo-container layout-padding">
     <div class="table-demo-padding layout-padding-view layout-padding-auto">
       <Table
@@ -21,6 +21,7 @@
         <template #operation="{row}">
           <div class="flex items-center">
             <AuthButton auth="sys.user.edit" :disabled="row.id === 1" @click="onOpenEditUser('edit', row)"/>
+            <AuthButton auth="sys.user.password" :disabled="row.id === 1" @click="onOpenPassword(row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onTableDelRow(row)">
               <template #reference>
                 <AuthButton auth="sys.user.del" :disabled="row.id === 1"/>
@@ -31,6 +32,17 @@
         <template #dialog>
           <UserDialog ref="userDialogRef" @refresh="getTableData(state.tableData.param)" :row="listRow"/>
           <UserImportDialog ref="userImportDialogRef" @refresh="getTableData(state.tableData.param)"/>
+          <el-dialog title="修改密码" v-model="state.passwordDialog.isShow" width="400px">
+            <el-form ref="passwordFormRef" :model="state.passwordDialog.form" :rules="state.passwordDialog.rules" label-width="80px">
+              <el-form-item label="新密码" prop="password">
+                <el-input v-model="state.passwordDialog.form.password" type="password" placeholder="请输入新密码" show-password />
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="state.passwordDialog.isShow = false" size="default">取 消</el-button>
+              <el-button type="primary" @click="onSubmitPassword" size="default">确 定</el-button>
+            </template>
+          </el-dialog>
         </template>
       </Table>
     </div>
@@ -55,6 +67,8 @@ const api = userApi();
 const tableRef = ref();
 const userDialogRef = ref();
 const userImportDialogRef = ref();
+const passwordFormRef = ref();
+const passwordRow = ref({});
 const listRow = ref();
 const state = reactive({
   tableData: {
@@ -113,6 +127,18 @@ const state = reactive({
     // 打印标题
     printName: 'ginBaseAdmin 表格打印演示',
     selectList: [], // 选中列
+  },
+  passwordDialog: {
+    isShow: false,
+    form: {
+      password: '',
+    },
+    rules: {
+      password: [
+        { required: true, message: '请输入新密码', trigger: 'blur' },
+        { min: 6, message: '密码长度不能小于6位', trigger: 'blur' },
+      ],
+    },
   },
 });
 const onOpenAddUser = (type) => {
@@ -186,6 +212,28 @@ const batchDelete = async () => {
 // 拖动显示列排序回调
 const onSortHeader = (data) => {
   state.tableData.header = data;
+};
+// 打开修改密码弹窗
+const onOpenPassword = (row) => {
+  passwordRow.value = row;
+  state.passwordDialog.form.password = '';
+  state.passwordDialog.isShow = true;
+};
+// 提交修改密码
+const onSubmitPassword = async () => {
+  if (!passwordFormRef.value) return;
+  try {
+    await passwordFormRef.value.validate();
+  } catch {
+    return;
+  }
+  try {
+    await api.password({ id: passwordRow.value.id, password: state.passwordDialog.form.password });
+    ElMessage.success('密码修改成功');
+    state.passwordDialog.isShow = false;
+  } catch (e) {
+    ElMessage.error('密码修改失败');
+  }
 };
 // 页面加载时
 onMounted(() => {
