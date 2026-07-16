@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="layout-navbars-breadcrumb-user pr15" :style="{ flex: layoutUserFlexNum }">
     <el-dropdown :show-timeout="70" :hide-timeout="50" trigger="click" @command="onComponentSizeChange">
       <div class="layout-navbars-breadcrumb-user-icon">
@@ -182,7 +182,7 @@ const onHandleCommandClick = (path) => {
 			})
 			.catch(() => {});
 	} else if (path === 'wareHouse') {
-		window.open('https://gitee.com/dsxwk/gin-base');
+		window.open('https://gitee.com/dsxwk/gin-web');
 	} else {
 		router.push(path);
 	}

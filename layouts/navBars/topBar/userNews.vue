@@ -1,4 +1,4 @@
-<template>
+﻿<template>
 	<div class="layout-navbars-breadcrumb-user-news">
 		<div class="head-box">
 			<div class="head-box-title">{{ $t('message.user.newTitle') }}</div>
@@ -28,7 +28,7 @@ const state = reactive({
 	newsList: [
 		{
 			label: '关于版本发布的通知',
-			value: 'gin-base-admin，基于 Go gin + vue3 + CompositionAPI + typescript + vite + element plus，正式发布时间：2024年02月28日！',
+			value: 'gin-admin，基于 Go gin + vue3 + CompositionAPI + typescript + vite + element plus，正式发布时间：2024年02月28日！',
 			time: '2020-12-08',
 		},
 		{
