@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="user-import-dialog">
     <el-dialog
         title="用户导入"
@@ -7,12 +7,7 @@
         width="1000px"
     >
       <div class="import-toolbar">
-        <el-button size="default" v-auth="'sys.user.import'" type="info" plain @click="openRecords">
-          <el-icon>
-            <ele-Document/>
-          </el-icon>
-          导入记录
-        </el-button>
+        <AuthButton auth="sys.user.importRecords" @click="openRecords"/>
         <el-upload
             :auto-upload="false"
             :show-file-list="false"
@@ -87,31 +82,61 @@
     </el-dialog>
 
     <el-dialog title="导入记录" v-model="state.recordsVisible" width="900px" append-to-body>
-      <el-table :data="state.records" border max-height="420" style="width: 100%">
-        <el-table-column type="index" label="序号" width="80" align="center"/>
-        <el-table-column prop="fileName" label="文件名" min-width="180"/>
-        <el-table-column prop="total" label="总数" width="90" align="center"/>
-        <el-table-column prop="success" label="成功" width="90" align="center"/>
-        <el-table-column prop="fail" label="失败" width="90" align="center"/>
-        <el-table-column prop="operator" label="创建人" width="120"/>
+      <el-table :data="state.records" border max-height="420" v-loading="state.recordsLoading" style="width: 100%">
+        <el-table-column prop="id" label="ID" width="80" align="center"/>
+        <el-table-column label="导入类型" width="120" align="center">
+          <template #default="{row}">
+            {{ getDict(typeDict, row.type) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="创建人" width="120">
+          <template #default="{row}">
+            {{ row.user?.fullName || row.user?.username || '' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="明细数量" width="100" align="center">
+          <template #default="{row}">
+            {{ row.data?.length || 0 }}
+          </template>
+        </el-table-column>
         <el-table-column prop="createdAt" label="导入时间" min-width="170"/>
-        <template #empty>暂无导入记录(接口待接入)</template>
+        <el-table-column label="操作" width="160" fixed="right" align="center">
+          <template #default="{row}">
+            <AuthButton auth="sys.user.importRecords.detail" @click="onOpenRecordsDetail(row)"/>
+            <el-popconfirm title="确定删除吗？" @confirm="onRecordsDelete(row)">
+              <template #reference>
+                <AuthButton auth="sys.user.importRecords.delete"/>
+              </template>
+            </el-popconfirm>
+          </template>
+        </el-table-column>
+        <template #empty>暂无导入记录</template>
       </el-table>
     </el-dialog>
-  </div>
+
+    <ImportDetailDialog ref="recordsDetailRef" />
+
+ </div>
 </template>
 
 <script setup name="systemUserImportDialog">
-import {reactive} from 'vue';
+import {reactive, defineAsyncComponent, ref} from 'vue';
+import {useRouter} from 'vue-router';
 import {ElMessage} from 'element-plus';
 import * as XLSX from 'xlsx';
 import {userApi} from '/@/api/user';
+import {importRecordsApi} from '/@/api/importRecords';
 import {genderDict, statusDict} from '/@/dict/user';
+import {typeDict} from '/@/dict/importRecords';
 import {getDict} from '/@/utils/dict.js';
 import AuthButton from '/@/components/authButton/index.vue';
+const ImportDetailDialog = defineAsyncComponent(() => import('/@/views/system/user/component/importDetailDialog.vue'));
 
 const emit = defineEmits(['refresh']);
+const router = useRouter();
 const api = userApi();
+const recordsApi = importRecordsApi();
+const recordsDetailRef = ref();
 
 // 列定义：key 提交字段，label Excel 表头/展示名
 const columns = [
@@ -131,6 +156,7 @@ const state = reactive({
   rows: [],
   recordsVisible: false,
   records: [],
+  recordsLoading: false,
 });
 
 // 中文/数字统一转换为字典 value
@@ -226,10 +252,28 @@ const openDialog = () => {
   state.isShowDialog = true;
 };
 
-// 打开导入记录（接口待接入，先占位）
-const openRecords = () => {
-  state.records = [];
+// 打开明细
+const onOpenRecordsDetail = (row) => {
+  recordsDetailRef.value.openDialog(row.type, row.data);
+};
+// 删除记录
+const onRecordsDelete = async (row) => {
+  await recordsApi.delete({ id: row.id });
+  ElMessage.success('删除成功');
+  state.records = state.records.filter((item) => item.id !== row.id);
+};
+// 打开导入记录
+const openRecords = async () => {
   state.recordsVisible = true;
+  state.recordsLoading = true;
+  try {
+    const res = await recordsApi.list({ page: 1, pageSize: 5, __search: { and: [{ type: 1 }] } });
+    state.records = res?.data?.list || [];
+  } catch {
+    state.records = [];
+  } finally {
+    state.recordsLoading = false;
+  }
 };
 const closeDialog = () => {
   state.isShowDialog = false;
