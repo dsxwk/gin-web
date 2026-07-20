@@ -28,13 +28,14 @@
         </template>
         <template #dialog>
           <RoleDialog ref="roleDialogRef" @refresh="getTableData(state.tableData.param)" :row="listRow"/>
+          <UserDialog ref="userDialogRef"/>
         </template>
       </Table>
     </div>
   </div>
 </template>
 <script setup name="systemRole">
-import {defineAsyncComponent, reactive, ref, onMounted} from 'vue';
+import {defineAsyncComponent, h, reactive, ref, onMounted} from 'vue';
 import {ElMessage, ElMessageBox} from 'element-plus';
 import {roleApi} from '/@/api/role';
 import {statusDict} from '/@/dict/role';
@@ -44,6 +45,7 @@ import {withTableLoading} from '/@/utils/commonFunction';
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
 const RoleDialog = defineAsyncComponent(() => import('/@/views/system/role/component/dialog.vue'));
+const UserDialog = defineAsyncComponent(() => import('/@/views/system/role/component/userDialog.vue'));
 import AuthButton from '/@/components/authButton/index.vue';
 
 const api = roleApi();
@@ -51,6 +53,7 @@ const api = roleApi();
 const tableRef = ref();
 const roleDialogRef = ref();
 const listRow = ref();
+const userDialogRef = ref();
 const state = reactive({
   tableData: {
     // 列表数据（必传）
@@ -64,6 +67,16 @@ const state = reactive({
           return getDict(statusDict, scope.row?.status);
         },
         search: {type: 'select', options: statusDict, isSearch: true},
+      },
+      {key: 'userCount', colWidth: '100', title: '用户数', isCheck: true,
+        render: (scope) => {
+          const count = scope.row?.userRoles?.length || 0;
+          if (count === 0) return '0';
+          return h('a', {
+            style: { color: 'var(--el-color-primary)', cursor: 'pointer', textDecoration: 'none' },
+            onClick: () => onOpenUserList(scope.row),
+          }, String(count));
+        },
       },
       {key: 'desc', colWidth: '', title: '描述', type: 'text', isCheck: true},
       {key: 'createdAt', colWidth: '', title: '创建时间', type: 'text', isCheck: true},
@@ -101,6 +114,10 @@ const onOpenEditRole = (type, row) => {
   listRow.value = row;
   roleDialogRef.value.openDialog(type, row);
 };
+const onOpenUserList = (row) => {
+  userDialogRef.value.openDialog(row.userRoles);
+};
+// 鐐瑰嚮鐢ㄦ埛鏁版墦寮€鐢ㄦ埛璇︽儏
 // 初始化列表数据
 const getTableData = (param) => withTableLoading(state.tableData.config, async () => {
   let response = await api.list(param);

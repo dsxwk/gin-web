@@ -11,6 +11,28 @@
             size: 'default'
           }"
       >
+        <template #roleUsers>
+          <div class="role-users-selector" @click="onOpenUserSelect" tabindex="0">
+            <div class="role-users-tags" v-if="state.ruleForm.userRoles.length">
+              <el-tag
+                v-for="(user, idx) in visibleUsers"
+                :key="user.id"
+                closable
+                size="small"
+                :disable-transitions="false"
+                @click.stop
+                @close.stop="onRemoveUser(idx)"
+              >
+                {{ user.nickname || user.username || user.id }}
+              </el-tag>
+              <el-tag v-if="overflowCount > 0" size="small" type="info" class="role-users-more">
+                +{{ overflowCount }}
+              </el-tag>
+            </div>
+            <span v-else class="role-users-placeholder">请选择用户</span>
+            <el-icon class="role-users-arrow"><ArrowDown /></el-icon>
+          </div>
+        </template>
         <template #roleMenus>
           <div class="role-action-toolbar" v-if="state.menuTree.length">
             <el-checkbox v-model="menuCheckAll" :indeterminate="menuCheckIndeterminate" @change="onToggleMenuCheckAll">全选</el-checkbox>
@@ -45,6 +67,8 @@
         </span>
       </template>
     </el-dialog>
+    <!-- 用户选择弹窗 -->
+    <UserSelectDialog ref="userSelectDialogRef" @confirm="onUserSelectConfirm"/>
   </div>
 </template>
 <script setup name="systemRoleDialog">
@@ -55,6 +79,8 @@ import {ElMessage} from 'element-plus';
 import {i18n} from '/@/static/i18n';
 import ConfigForm from '/@/components/form/index.vue';
 import {statusDict} from '/@/dict/role';
+import {ArrowDown} from '@element-plus/icons-vue';
+import UserSelectDialog from '/@/views/system/role/component/userSelectDialog.vue';
 
 const props = defineProps({
   row: {
@@ -66,6 +92,7 @@ const props = defineProps({
 const emit = defineEmits(['refresh']);
 const dialogFormRef = ref();
 const menuTreeRef = ref();
+const userSelectDialogRef = ref();
 const menuCheckAll = ref(false);
 const menuCheckIndeterminate = ref(false);
 const api = roleApi();
@@ -76,6 +103,7 @@ const state = reactive({
     name: '',
     desc: '',
     status: 1,
+    userRoles: [],
   },
   menuTree: [], // 统一权限树（菜单 type=1 + 功能 type=2）
   dialog: {
@@ -109,6 +137,13 @@ const collectLeafIds = (list, set = new Set()) => {
   });
   return set;
 };
+
+// 下拉框最多显示标签数
+const MAX_VISIBLE_TAGS = 3;
+// 当前可见的用户标签
+const visibleUsers = computed(() => state.ruleForm.userRoles.slice(0, MAX_VISIBLE_TAGS));
+// 溢出数量
+const overflowCount = computed(() => state.ruleForm.userRoles.length);
 
 const getFormData = computed(() => {
   return [
@@ -145,6 +180,12 @@ const getFormData = computed(() => {
       options: statusDict
     },
     {
+      label: '用户',
+      prop: 'roleUsers',
+      slot: 'roleUsers',
+      span: 24,
+    },
+    {
       label: '权限',
       prop: 'roleMenus',
       slot: 'roleMenus',
@@ -159,6 +200,7 @@ const openDialog = async (type, row) => {
     name: '',
     desc: '',
     status: 1,
+    userRoles: [],
   };
   menuCheckAll.value = false;
   menuCheckIndeterminate.value = false;
@@ -173,6 +215,18 @@ const openDialog = async (type, row) => {
           state.ruleForm[key] = data[key];
         }
       });
+      // 提取角色关联的用户列表（兼容后端多种返回格式）
+      // 从 detail 或列表行数据提取 userRoles，user 是后端关联返回的用户数据
+      const rawRoles = data.userRoles || props.row.userRoles;
+      if (Array.isArray(rawRoles) && rawRoles.length) {
+        state.ruleForm.userRoles = rawRoles.map((ur) => ({
+          id: ur.userId,
+          username: ur.user?.username || '',
+          nickname: ur.user?.nickname || '',
+        }));
+      } else {
+        state.ruleForm.userRoles = [];
+      }
       // 默认选中角色已存在的权限（父子联动：仅勾选叶子，父级由 el-tree 自动推算）
       const leafSet = collectLeafIds(state.menuTree);
       const storedMenuIds = Array.isArray(data.roleMenus)
@@ -231,6 +285,20 @@ const onExpandAllMenus = (expand) => {
   });
 };
 
+// ---- 用户选择 ----
+const onOpenUserSelect = () => {
+  const existingIds = state.ruleForm.userRoles.map((u) => u.id);
+  userSelectDialogRef.value.openDialog(existingIds);
+};
+
+const onUserSelectConfirm = (selectedUsers) => {
+  state.ruleForm.userRoles = selectedUsers;
+};
+
+const onRemoveUser = (index) => {
+  state.ruleForm.userRoles.splice(index, 1);
+};
+
 const onSubmit = async () => {
   dialogFormRef.value.validate(async (valid) => {
     if (!valid) return;
@@ -243,6 +311,12 @@ const onSubmit = async () => {
     submitData.roleMenus = [...checkedKeys, ...halfCheckedKeys].map((menuId) => ({
       roleId,
       menuId,
+      name: state.ruleForm.name,
+    }));
+    // 选中的用户转为 [{roleId, userId}]
+    submitData.userRoles = state.ruleForm.userRoles.map((user) => ({
+      roleId,
+      userId: user.id,
       name: state.ruleForm.name,
     }));
 
@@ -295,4 +369,46 @@ defineExpose({openDialog});
   align-items: center;
   gap: 6px;
 }
+.role-users-selector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  height: 32px;
+  border: 1px solid var(--el-border-color);
+  border-radius: var(--el-border-radius-base);
+  background: var(--el-bg-color);
+  cursor: pointer;
+  transition: border-color 0.2s;
+  outline: none;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.role-users-selector:hover {
+  border-color: var(--el-color-primary);
+}
+.role-users-placeholder {
+  color: var(--el-text-color-placeholder);
+  font-size: 14px;
+  flex: 1;
+}
+.role-users-arrow {
+  flex-shrink: 0;
+  color: var(--el-text-color-placeholder);
+  font-size: 12px;
+}
+.role-users-tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+.role-users-more {
+  flex-shrink: 0;
+}
 </style>
+
+
+
