@@ -189,13 +189,18 @@ export function backEndComponent(routes) {
  */
 export function dynamicImport(dynamicViewsModules, component) {
     const keys = Object.keys(dynamicViewsModules);
+    const normalizedComponent = component.replace(/\\/g, '/').replace(/^\/+/, '');
     const matchKeys = keys.filter((key) => {
-        const k = key.replace(/..\/views|../, '');
-        return k.startsWith(`${component}`) || k.startsWith(`/${component}`);
+        const normalizedKey = key.replace(/\\/g, '/');
+        if (normalizedKey.endsWith(normalizedComponent)) return true;
+        const strippedKey = normalizedKey.replace(/^\.\.\/views\//, '');
+        if (strippedKey === normalizedComponent) return true;
+        if ('/' + strippedKey === normalizedComponent) return true;
+        if (normalizedComponent.endsWith(strippedKey.replace(/\.vue$/, ''))) return true;
+        return false;
     });
     if (matchKeys?.length === 1) {
-        const matchKey = matchKeys[0];
-        return dynamicViewsModules[matchKey];
+        return dynamicViewsModules[matchKeys[0]];
     }
     if (matchKeys?.length > 1) {
         return false;
