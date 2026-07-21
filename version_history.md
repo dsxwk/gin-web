@@ -1,5 +1,8 @@
 ﻿# Version History
 
+## v2.0.3
+> - Selection user component adjustment and add backend role permission control
+
 ## v2.0.2
 > - Add or modify the role to add user selection, list display role users
 > - Dynamic route loading adjustment
