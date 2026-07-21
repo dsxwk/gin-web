@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="system-menu-dialog-container">
     <el-dialog :title="state.dialog.title" v-if="state.dialog.isShowDialog" v-model="state.dialog.isShowDialog" width="769px">
       <ConfigForm
@@ -59,6 +59,22 @@
             <el-empty v-if="!state.menuTree.length" description="暂无可配置权限" :image-size="60" />
           </div>
         </template>
+        <template #rolePermissions>
+          <el-table
+            ref="permissionTableRef"
+            :data="state.permissionList"
+            border
+            max-height="300"
+            style="width: 100%"
+            @selection-change="onPermissionSelect"
+          >
+            <el-table-column type="selection" width="50" />
+            <el-table-column prop="key" label="权限标识" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="method" label="请求方式" width="100" align="center" />
+            <el-table-column prop="uri" label="路由地址" min-width="200" show-overflow-tooltip />
+          </el-table>
+          <el-empty v-if="!state.permissionList.length" description="暂无权限数据" :image-size="60" />
+        </template>
       </ConfigForm>
       <template #footer>
         <span class="dialog-footer">
@@ -75,6 +91,7 @@
 import {computed, nextTick, onMounted, reactive, ref} from 'vue';
 import {roleApi} from '/@/api/role';
 import {menuApi} from '/@/api/menu';
+import {permissionApi} from '/@/api/permission';
 import {ElMessage} from 'element-plus';
 import {i18n} from '/@/static/i18n';
 import ConfigForm from '/@/components/form/index.vue';
@@ -93,10 +110,12 @@ const emit = defineEmits(['refresh']);
 const dialogFormRef = ref();
 const menuTreeRef = ref();
 const userSelectDialogRef = ref();
+const permissionTableRef = ref();
 const menuCheckAll = ref(false);
 const menuCheckIndeterminate = ref(false);
 const api = roleApi();
 const menuApiSvc = menuApi();
+const permissionApiSvc = permissionApi();
 
 const state = reactive({
   ruleForm: {
@@ -105,7 +124,9 @@ const state = reactive({
     status: 1,
     userRoles: [],
   },
-  menuTree: [], // 统一权限树（菜单 type=1 + 功能 type=2）
+  menuTree: [], // 统一权限树(菜单 type=1 + 功能 type=2)
+  permissionList: [], // 权限列表
+  selectedPermissions: [], // 已选权限
   dialog: {
     isShowDialog: false,
     type: 'add',
@@ -186,15 +207,39 @@ const getFormData = computed(() => {
       span: 24,
     },
     {
-      label: '权限',
+      label: '菜单功能',
       prop: 'roleMenus',
       slot: 'roleMenus',
+      span: 24,
+    },
+    {
+      label: '权限',
+      prop: 'rolePermissions',
+      slot: 'rolePermissions',
       span: 24,
     },
   ];
 });
 const rules = {};
 
+// 加载权限列表
+const loadPermissions = async () => {
+  const res = await permissionApiSvc.list({ page: 1, pageSize: 100, notPage: true });
+  state.permissionList = (res?.data?.list || []).sort((a, b) => (a.uri || '').localeCompare(b.uri || '') || (a.method || '').localeCompare(b.method || ''));
+};
+// 权限选择变更
+const onPermissionSelect = (selection) => {
+  state.selectedPermissions = selection.map((item) => item.id);
+};
+// 回显已选权限
+const togglePermissionSelection = (permissionIds) => {
+  if (!permissionTableRef.value || !state.permissionList.length) return;
+  state.permissionList.forEach((row) => {
+    if (permissionIds.includes(row.id)) {
+      permissionTableRef.value.toggleRowSelection(row, true);
+    }
+  });
+};
 const openDialog = async (type, row) => {
   state.ruleForm = {
     name: '',
@@ -206,7 +251,10 @@ const openDialog = async (type, row) => {
   menuCheckIndeterminate.value = false;
   // 加载统一权限树（不分页）
   await loadMenuTree();
+  // 加载权限列表
+  await loadPermissions();
   let checkedMenuIds = [];
+  let storedPermissionIds = [];
   if (type === 'edit') {
     try {
       const data = await detail(row.id);
@@ -229,17 +277,23 @@ const openDialog = async (type, row) => {
       }
       // 默认选中角色已存在的权限（父子联动：仅勾选叶子，父级由 el-tree 自动推算）
       const leafSet = collectLeafIds(state.menuTree);
+      // 回显已选权限
+      storedPermissionIds = Array.isArray(data.rolePermissions)
+        ? data.rolePermissions.map((rp) => rp.permissionId ?? rp.permission?.id).filter((v) => v != null)
+        : [];
       const storedMenuIds = Array.isArray(data.roleMenus)
         ? data.roleMenus.map((rm) => rm.menuId ?? rm.menu?.id).filter((v) => v != null)
         : [];
       checkedMenuIds = storedMenuIds.filter((id) => leafSet.has(id));
       state.dialog.title = '修改角色';
       state.dialog.submitTxt = '修 改';
+
     } catch (e) {
       ElMessage.error('获取角色详情失败');
       return;
     }
   } else {
+    state.selectedPermissions = [];
     state.dialog.title = '新增角色';
     state.dialog.submitTxt = '新 增';
   }
@@ -251,6 +305,10 @@ const openDialog = async (type, row) => {
     menuTreeRef.value && menuTreeRef.value.setCheckedKeys(checkedMenuIds);
     // 回显后同步"全选"勾选/半选状态
     syncMenuCheckAll();
+    // 编辑时回显已选权限
+    if (state.dialog.type === 'edit') {
+      togglePermissionSelection(storedPermissionIds);
+    }
   });
 };
 
@@ -259,10 +317,11 @@ const closeDialog = () => {
 };
 
 const onCancel = () => {
+  state.selectedPermissions = [];
   closeDialog();
 };
 
-// 权限：全选 / 取消全选
+// 权限：全选/取消全选
 const onToggleMenuCheckAll = (val) => {
   if (!menuTreeRef.value) return;
   const leafIds = val ? [...collectLeafIds(state.menuTree)] : [];
@@ -276,7 +335,7 @@ const syncMenuCheckAll = () => {
   menuCheckAll.value = total > 0 && checked === total;
   menuCheckIndeterminate.value = checked > 0 && checked < total;
 };
-// 权限：展开 / 收起全部
+// 权限：展开/收起全部
 const onExpandAllMenus = (expand) => {
   const treeRef = menuTreeRef.value;
   if (!treeRef || !treeRef.store) return;
@@ -285,7 +344,7 @@ const onExpandAllMenus = (expand) => {
   });
 };
 
-// ---- 用户选择 ----
+// 用户选择
 const onOpenUserSelect = () => {
   const existingIds = state.ruleForm.userRoles.map((u) => u.id);
   userSelectDialogRef.value.openDialog(existingIds);
@@ -318,6 +377,11 @@ const onSubmit = async () => {
       roleId,
       userId: user.id,
       name: state.ruleForm.name,
+    }));
+    // 权限
+    submitData.rolePermissions = state.selectedPermissions.map((permissionId) => ({
+      roleId,
+      permissionId,
     }));
 
     let msg = '';

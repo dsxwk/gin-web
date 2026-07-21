@@ -1,9 +1,9 @@
-<template>
+﻿<template>
 	<div class="table-container layout-pd">
     <TableSearch ref="tableSearchRef" :search="searchList" :custom-search="customSearch" @search="onSearch" class="table-search-box" />
     <div class="flex items-center table-toolbar" style="justify-content: space-between;">
-      <div class="table-tools-bar" v-if="slots.tools">
-        <slot name="tools"></slot>
+      <div class="table-tools-bar">
+        <slot name="tools" v-if="slots.tools"></slot>
       </div>
       <div class="table-header-right-tool">
         <SvgIcon v-if="config.isPrintTool" name="iconfont icon-dayin" :size="19" title="打印" @click="onPrintTable" />
@@ -467,3 +467,4 @@ defineExpose({
 	}
 }
 </style>
+
