@@ -123,7 +123,7 @@
 import {reactive, defineAsyncComponent, ref} from 'vue';
 import {useRouter} from 'vue-router';
 import {ElMessage} from 'element-plus';
-import * as XLSX from 'xlsx';
+import readXlsxFile from 'read-excel-file';
 import {userApi} from '/@/api/user';
 import {importRecordsApi} from '/@/api/importRecords';
 import {genderDict, statusDict} from '/@/dict/user';
@@ -194,23 +194,26 @@ const hasAnyValue = (row) => columns.some((col) => {
 });
 
 // 选择文件后解析
-const onFileChange = (uploadFile) => {
+const onFileChange = async (uploadFile) => {
   const file = uploadFile.raw;
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, {type: 'array'});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(ws, {defval: ''});
-      state.rows = json.map(mapRow).filter(hasAnyValue);
-      if (!state.rows.length) ElMessage.warning('未解析到有效数据，请检查是否使用了下载的模板');
-    } catch (err) {
-      ElMessage.error('文件解析失败，请使用下载的模板');
+  try {
+    const rows = await readXlsxFile(file);
+    if (!rows.length) {
+      ElMessage.warning("未解析到有效数据，请检查是否使用了下载的模板");
+      return;
     }
-  };
-  reader.readAsArrayBuffer(file);
+    const headers = rows[0];
+    const json = rows.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i] ?? ""; });
+      return obj;
+    });
+    state.rows = json.map(mapRow).filter(hasAnyValue);
+    if (!state.rows.length) ElMessage.warning("未解析到有效数据，请检查是否使用了下载的模板");
+  } catch (err) {
+    ElMessage.error("文件解析失败，请使用下载的模板");
+  }
 };
 
 // 下载模板：public/templates 下静态文件，兼容不同 base

@@ -1,19 +1,20 @@
-import {resolve} from 'path';
+﻿import {resolve} from 'path';
 import vue from '@vitejs/plugin-vue';
 import vueJsx from '@vitejs/plugin-vue-jsx';
-import {defineConfig, loadEnv} from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import Inspector from 'vite-plugin-vue-inspector';
 import vueSetupExtend from 'vite-plugin-vue-setup-extend-plus';
 import viteCompression from 'vite-plugin-compression';
-import {buildConfig} from '/@/utils/build';
+import { buildConfig } from '/@/utils/build';
+
 const pathResolve = (dir) => {
     return resolve(__dirname, '.', dir);
 };
 
 // https://vite.dev/config/
-export default defineConfig((mode) => {
-    const env = loadEnv(mode.mode || '', process.cwd());
-    const port = env?.VITE_PORT ? parseInt(env.VITE_PORT, 10) : 3000;
+export default defineConfig(({ mode, command }) => {
+    const env = loadEnv(mode, process.cwd());
+    const port = env.VITE_PORT ? parseInt(env.VITE_PORT, 10) : 3000;
 
     return {
         plugins: [
@@ -31,7 +32,7 @@ export default defineConfig((mode) => {
             },
         },
         build: {
-            sourcemap: true, // 启用 Source Maps
+            sourcemap: true,
             outDir: 'dist',
             chunkSizeWarningLimit: 1500,
             rollupOptions: {
@@ -48,24 +49,24 @@ export default defineConfig((mode) => {
                 ...(JSON.parse(env.VITE_OPEN_CDN) ? { external: buildConfig.external } : {}),
             },
         },
-        base: mode.command === 'serve' ? './' : env.VITE_PUBLIC_PATH,
+        base: command === 'serve' ? './' : env.VITE_PUBLIC_PATH,
         server: {
             host: '0.0.0.0',
             port: port,
             open: JSON.parse(env.VITE_OPEN),
             cors: true,
-            sourcemap: true, // 开发环境启用 Source Maps
-            proxy: {}, // 代理
+            sourcemap: true,
+            proxy: {},
         },
         optimizeDeps: {
             include: [],
             exclude: ['vue-demi']
         },
-        css: {preprocessorOptions: {css: {charset: false}}},
+        css: { preprocessorOptions: { css: { charset: false } } },
         define: {
             __NEXT_VERSION__: JSON.stringify(process.env.npm_package_version),
             __NEXT_NAME__: JSON.stringify(process.env.npm_package_name),
-            __BUILD_TIME__: JSON.stringify(new Date().toISOString()), // 构建时间
+            __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
         },
     };
 });

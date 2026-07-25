@@ -1,7 +1,7 @@
 import {nextTick} from 'vue';
 import {useRequestOldRoutes} from '/@/stores/requestOldRoutes';
 import pinia from '/@/stores/index';
-import {Session} from '/@/utils/storage';
+import {Session, Local} from '/@/utils/storage';
 import {NextLoading} from '/@/utils/loading';
 import {dynamicRoutes, notFoundAndNoPower} from '/@/router/route';
 import {formatTwoStageRoutes, formatFlatteningRoutes, router} from '/@/router/index';
@@ -101,10 +101,17 @@ export async function setAddRoute() {
  */
 export async function getBackEndControlRoutes() {
     // 模拟 admin 与 test
-    const userInfo = Session.get("userInfo");
+    const token = Session.get('token');
+    if (!token) {
+        Session.clear();
+        window.location.reload();
+        return {data: []};
+    }
+    const userInfo = Local.get("userInfo");
     if (!userInfo) {
         Session.clear();
         window.location.reload();
+        return {data: []};
     }
     const roles = userInfo?.userRoles?.map((item) => item.roleId);
     return await api.roleMenu({roleId: roles.join(',')});

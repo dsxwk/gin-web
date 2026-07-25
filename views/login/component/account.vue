@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-form size="large" class="login-content-form">
     <el-form-item class="login-animation1">
       <el-input text :placeholder="$t('message.account.accountPlaceholder1')" v-model="state.ruleForm.username"
@@ -198,3 +198,6 @@ onMounted(() => {
   }
 }
 </style>
+
+
+

@@ -1,5 +1,8 @@
 ﻿# Version History
 
+## 2.0.4
+> - Updated import package, fixed login storage and different environment configuration reading problems
+
 ## v2.0.3
 > - Selection user component adjustment and add backend role permission control
 

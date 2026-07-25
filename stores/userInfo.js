@@ -1,6 +1,6 @@
 import {defineStore} from 'pinia';
 // import Cookies from 'js-cookie';
-import {Session} from '/@/utils/storage';
+import {Session, Local} from '/@/utils/storage';
 
 /**
  * 用户信息
@@ -9,7 +9,8 @@ import {Session} from '/@/utils/storage';
 export const useUserInfo = defineStore('userInfo', {
 	state: () => ({
 		// 刷新页面时 pinia 会重置，从缓存回填用户信息，避免头像/用户名等丢失
-		userInfos: Session.get('userInfo') || {
+		// 使用 Local 存储实现跨窗口共享，避免新窗口打开时用户信息丢失
+		userInfos: Local.get('userInfo') || {
 			username: '',
 			avatar: '',
 			time: 0,
@@ -19,7 +20,7 @@ export const useUserInfo = defineStore('userInfo', {
 	}),
 	actions: {
 		async setUserInfos(userInfo) {
-			Session.set('userInfo', userInfo);
+			Local.set('userInfo', userInfo);
 			this.userInfos = userInfo;
 		},
 		// 模拟接口数据

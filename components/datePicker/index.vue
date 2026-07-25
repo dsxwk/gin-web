@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-date-picker
     v-model="innerValue"
     :type="type"
@@ -85,129 +85,59 @@ const computedDefaultTime = computed(() => {
   return [];
 });
 
-const getDateOffset = (months) => {
-  const isFuture = months > 0;
-  const start = new Date();
-  isFuture ? start.setHours(0, 0, 0, 0) : start.setHours(23, 59, 59, 999);
-  const end = new Date(start);
-  isFuture ? end.setHours(23, 59, 59, 999) : end.setHours(0, 0, 0, 0);
-  const currentDay = end.getDate();
-
-  end.setMonth(end.getMonth() + months);
-
-  if (end.getDate() !== currentDay) {
-    end.setDate(0);
-  }
-  return isFuture ? [start, end] : [end, start];
-};
-
-const formatDate = (date, format) => {
+const fmt = (date) => {
   if (!date) return '';
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
-  if (format.includes('HH')) {
-    const h = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-    const s = String(date.getSeconds()).padStart(2, '0');
-    return `${y}-${m}-${d} ${h}:${min}:${s}`;
-  }
-  return `${y}-${m}-${d}`;
+  return y + '-' + m + '-' + d;
 };
+
+const getDateOffset = (months) => {
+  const now = new Date();
+  const isFuture = months > 0;
+  const ty = now.getFullYear();
+  const tm = now.getMonth();
+  const td = now.getDate();
+  const todayStart = new Date(ty, tm, td, 0, 0, 0, 0);
+  const todayEnd = new Date(ty, tm, td, 23, 59, 59, 999);
+  let targetYear = ty;
+  let targetMonth = tm + months;
+  targetYear += Math.floor(targetMonth / 12);
+  targetMonth = targetMonth % 12;
+  if (targetMonth < 0) { targetMonth += 12; }
+  const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+  const targetDay = Math.min(td, daysInMonth);
+  const targetDate = new Date(targetYear, targetMonth, targetDay,
+    isFuture ? 23 : 0, isFuture ? 59 : 0, isFuture ? 59 : 0, isFuture ? 999 : 0);
+  return isFuture ? [todayStart, targetDate] : [targetDate, todayEnd];
+};
+
 
 const dateShortcuts = computed(() => {
   if (!isRange.value) return [];
-
-  const currentFormat = computedValueFormat.value;
-
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  const todayStart = new Date(y, m, d, 0, 0, 0, 0);
+  const todayEnd = new Date(y, m, d, 23, 59, 59, 999);
   return [
-    {
-      text: '今天',
-      value: () => {
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-        const end = new Date();
-        end.setHours(23, 59, 59, 999);
-        return [formatDate(start, currentFormat), formatDate(end, currentFormat)];
-      }
-    },
-    {
-      text: '最近一周',
-      value: () => {
-        const start = new Date();
-        const end = new Date();
-        start.setHours(0, 0, 0, 0);
-        end.setHours(23, 59, 59, 999);
-        start.setTime(start.getTime() - 604800000);
-        return [formatDate(start, currentFormat), formatDate(end, currentFormat)];
-      }
-    },
-    {
-      text: '最近一个月',
-      value: () => {
-        const [start, end] = getDateOffset(-1);
-        return [formatDate(start, currentFormat), formatDate(end, currentFormat)];
-      }
-    },
-    {
-      text: '最近三个月',
-      value: () => {
-        const [start, end] = getDateOffset(-3);
-        return [formatDate(start, currentFormat), formatDate(end, currentFormat)];
-      }
-    },
-    {
-      text: '最近半年',
-      value: () => {
-        const [start, end] = getDateOffset(-6);
-        return [formatDate(start, currentFormat), formatDate(end, currentFormat)];
-      }
-    },
-    {
-      text: '最近一年',
-      value: () => {
-        const [start, end] = getDateOffset(-12);
-        return [formatDate(start, currentFormat), formatDate(end, currentFormat)];
-      }
-    },
-    {
-      text: '未来一周',
-      value: () => {
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(start);
-        end.setTime(start.getTime() + 604799999);
-        return [formatDate(start, currentFormat), formatDate(end, currentFormat)];
-      }
-    },
-    {
-      text: '未来一个月',
-      value: () => {
-        const [start, end] = getDateOffset(1);
-        return [formatDate(start, currentFormat), formatDate(end, currentFormat)];
-      }
-    },
-    {
-      text: '未来三个月',
-      value: () => {
-        const [start, end] = getDateOffset(3);
-        return [formatDate(start, currentFormat), formatDate(end, currentFormat)];
-      }
-    },
-    {
-      text: '未来半年',
-      value: () => {
-        const [start, end] = getDateOffset(6);
-        return [formatDate(start, currentFormat), formatDate(end, currentFormat)];
-      }
-    },
-    {
-      text: '未来一年',
-      value: () => {
-        const [start, end] = getDateOffset(12);
-        return [formatDate(start, currentFormat), formatDate(end, currentFormat)];
-      }
-    }
+    { text: "今天", value: [fmt(todayStart), fmt(todayEnd)] },
+    { text: "最近一周", value: () => {
+      const s = new Date(y, m, d - 6, 0, 0, 0, 0);
+      return [fmt(s), fmt(todayEnd)];
+    }},
+    { text: "最近一个月", value: () => { const [s, e] = getDateOffset(-1); return [fmt(s), fmt(e)]; } },
+    { text: "最近三个月", value: () => { const [s, e] = getDateOffset(-3); return [fmt(s), fmt(e)]; } },
+    { text: "最近半年", value: () => { const [s, e] = getDateOffset(-6); return [fmt(s), fmt(e)]; } },
+    { text: "最近一年", value: () => { const [s, e] = getDateOffset(-12); return [fmt(s), fmt(e)]; } },
+    { text: "未来一周", value: () => {
+      const e2 = new Date(y, m, d + 6, 23, 59, 59, 999);
+      return [fmt(todayStart), fmt(e2)];
+    }},
+    { text: "未来一个月", value: () => { const [s, e] = getDateOffset(1); return [fmt(s), fmt(e)]; } },
+    { text: "未来三个月", value: () => { const [s, e] = getDateOffset(3); return [fmt(s), fmt(e)]; } },
+    { text: "未来半年", value: () => { const [s, e] = getDateOffset(6); return [fmt(s), fmt(e)]; } },
+    { text: "未来一年", value: () => { const [s, e] = getDateOffset(12); return [fmt(s), fmt(e)]; } },
   ];
 });
 </script>

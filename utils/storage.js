@@ -43,22 +43,28 @@ export const Session = {
     // 设置临时缓存
     set(key, val) {
         if (key === 'token') return Cookies.set(key, val);
+        if (key === 'refreshToken') return Local.set(key, val);
         window.sessionStorage.setItem(Local.setKey(key), JSON.stringify(val));
     },
     // 获取临时缓存
     get(key) {
         if (key === 'token') return Cookies.get(key);
+        if (key === 'refreshToken') return Local.get(key);
         let json = window.sessionStorage.getItem(Local.setKey(key));
         return JSON.parse(json);
     },
     // 移除临时缓存
     remove(key) {
         if (key === 'token') return Cookies.remove(key);
+        if (key === 'refreshToken') return Local.remove(key);
         window.sessionStorage.removeItem(Local.setKey(key));
     },
     // 移除全部临时缓存
     clear() {
         Cookies.remove('token');
+        Cookies.remove('username');
         window.sessionStorage.clear();
+        Local.remove('userInfo');
+        Local.remove('refreshToken');
     },
 };

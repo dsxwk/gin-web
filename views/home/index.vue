@@ -83,7 +83,7 @@ const cards = [
 ];
 
 const websiteInfo = [
-  {label: '网站名称', value: 'Gin-Base后台管理系统'},
+  {label: '网站名称', value: 'Gin-Admin后台管理系统'},
   {label: '当前版本', value: 'v' + __NEXT_VERSION__},
   {label: '管理员', value: '大师兄'},
   {label: '联系方式', value: 'dsx.email@qq.com'},
