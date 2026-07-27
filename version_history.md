@@ -1,6 +1,10 @@
 ﻿# Version History
 
-## 2.0.4
+## v2.0.5
+> - Fixed time date range selection component selection problem
+> - Add operation record
+
+## v2.0.4
 > - Updated import package, fixed login storage and different environment configuration reading problems
 
 ## v2.0.3
