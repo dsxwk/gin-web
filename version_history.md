@@ -1,5 +1,9 @@
 ﻿# Version History
 
+## v2.0.6
+> - Exception handling adjustment
+> - List table width adjustment
+
 ## v2.0.5
 > - Fixed time date range selection component selection problem
 > - Add operation record
