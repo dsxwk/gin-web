@@ -57,14 +57,14 @@ const state = reactive({
     data: [],
     // 表头内容（必传，注意格式）
     header: [
-      {key: 'id', colWidth: '', title: 'ID', type: 'text', isCheck: true},
+      {key: 'id', colWidth: '100', title: 'ID', type: 'text', isCheck: true},
       {key: 'user.fullName', colWidth: '100', title: '创建人', type: 'text', isCheck: true,
         render: (scope) => {
           return scope.row?.user?.fullName;
         }
       },
       {key: 'title', colWidth: '100', title: '标题', type: 'text', isCheck: true, search: {type: 'input', isSearch: true}},
-      {key: 'content', colWidth: '100', title: '内容', type: 'text', isCheck: true},
+      {key: 'content', colWidth: '', title: '内容', type: 'text', isCheck: true},
       {key: 'category.name', colWidth: '100', title: '分类', type: 'text', isCheck: true,
         render: (scope) => {
           return scope.row?.category?.name;

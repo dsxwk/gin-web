@@ -52,7 +52,7 @@ const state = reactive({
     data: [],
     // 表头内容（必传，注意格式）
     header: [
-      {key: 'id', colWidth: '', title: 'ID', type: 'text', isCheck: true},
+      {key: 'id', colWidth: '100', title: 'ID', type: 'text', isCheck: true},
       {key: 'user.fullName', colWidth: '100', title: '操作人', type: 'text', isCheck: true,
         render: (scope) => {
           return scope.row?.user?.fullName;
@@ -66,7 +66,7 @@ const state = reactive({
       },
       {key: 'statusCode', colWidth: '80', title: '状态码', type: 'text', isCheck: true},
       {key: 'ip', colWidth: '130', title: 'IP地址', type: 'text', isCheck: true},
-      {key: 'userAgent', colWidth: '100', title: '用户代理', type: 'text', isCheck: true},
+      {key: 'userAgent', colWidth: '', title: '用户代理', type: 'text', isCheck: true},
       {key: 'costMs', colWidth: '100', title: '耗时(ms)', type: 'text', isCheck: true},
       {key: 'createdAt', colWidth: '120', title: '操作时间', type: 'text', isCheck: true, search: {type: 'daterange', rangeProp: ['createdAtStart', 'createdAtEnd'], isSearch: true}},
     ],
