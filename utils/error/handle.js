@@ -33,6 +33,20 @@ const errorHandler = (error) => {
         return false;
     }
 
+    // 网络/请求异常：fetch失败统一抛TypeError，不同浏览器message不同
+    if (error?.name === 'TypeError' && typeof error?.message === 'string') {
+        const netPatterns = ['fetch', 'network', 'load failed', 'net::err', 'connection', 'timeout', 'abort', 'cancel'];
+        const isNetError = netPatterns.some(function(p) {
+            return error.message.toLowerCase().indexOf(p) !== -1;
+        });
+        if (isNetError) {
+            if (canShowError('network', 'fetch-fail')) {
+                pnotify.error('请检查网络连接或服务是否启动', '网络请求失败');
+            }
+            return false;
+        }
+    }
+
     const errorMap = {
         InternalError: 'Javascript引擎内部错误',
         ReferenceError: '未找到对象',
