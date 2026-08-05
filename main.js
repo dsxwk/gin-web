@@ -1,4 +1,4 @@
-﻿import { createApp } from 'vue';
+import { createApp } from 'vue';
 import App from './App.vue';
 import router from '/@/router';
 import errorHandler from '/@/utils/error/handle';
@@ -13,17 +13,20 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 // ECharts 按需引入
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { LineChart } from 'echarts/charts'
+import { LineChart, BarChart, PieChart } from 'echarts/charts'
 import { TooltipComponent, GridComponent, LegendComponent, TitleComponent } from 'echarts/components'
 
 // 注册 ECharts 需要的组件
 use([
     CanvasRenderer,
     LineChart,
+    BarChart,
+    PieChart,
     TooltipComponent,
     GridComponent,
     LegendComponent,
-    TitleComponent
+    TitleComponent,
+
 ]);
 
 import VueECharts from 'vue-echarts'
