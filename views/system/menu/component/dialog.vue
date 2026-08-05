@@ -84,6 +84,7 @@ function buildEmptyForm() {
     // 菜单(type=1)字段
     meta: {
       title: '', // 菜单名称（i18n key）
+      transKey: '', // 翻译键（非必传）
       icon: '', // 菜单图标
       path: '', // 路由路径
       redirect: '', // 路由重定向
@@ -98,6 +99,7 @@ function buildEmptyForm() {
     // 功能(type=2)字段
     action: {
       label: '', // 功能名称
+      transKey: '', // 翻译键（非必传）
       authValue: '', // 权限标识
       type: 2, // 按钮位置 1=header 2=operation
       btnType: 'btn', // 按钮类型
@@ -159,6 +161,14 @@ const formData = computed(() => {
       rules: [{required: true, message: '请输入菜单名称', trigger: 'blur'}],
     },
     {
+      label: '翻译键',
+      prop: 'meta.transKey',
+      type: 'input',
+      col: 12,
+      hidden: !isMenu,
+      attrs: {placeholder: '非必填，空则使用菜单名称', clearable: true, class: 'w100'},
+    },
+    {
       label: '路由名称', prop: 'name', type: 'input', col: 12, hidden: !isMenu,
       attrs: {placeholder: '路由中的 name 值', clearable: true},
       rules: [{required: true, message: '请输入路由名称', trigger: 'blur'}],
@@ -216,6 +226,14 @@ const formData = computed(() => {
       label: '功能名称', prop: 'action.label', type: 'input', col: 12, hidden: !isAction,
       attrs: {placeholder: '请输入功能名称', clearable: true},
       rules: [{required: true, message: '请输入功能名称', trigger: 'blur'}],
+    },
+    {
+      label: '翻译键',
+      prop: 'action.transKey',
+      type: 'input',
+      col: 12,
+      hidden: !isAction,
+      attrs: {placeholder: '非必填，空则使用功能名称', clearable: true, class: 'w100'},
     },
     {
       label: '权限标识', prop: 'action.authValue', type: 'input', col: 12, hidden: !isAction,
@@ -344,6 +362,7 @@ const openDialog = async (type, row) => {
         const a = (Array.isArray(data.menuActions) ? data.menuActions[0] : data.menuAction) || {};
         state.ruleForm.action = {
           label: a.label ?? '',
+          transKey: a.transKey ?? '',
           authValue: a.authValue ?? data.name ?? '',
           type: a.type ?? 2,
           btnType: a.btnType ?? 'btn',
@@ -356,6 +375,7 @@ const openDialog = async (type, row) => {
         const m = data.meta || {};
         state.ruleForm.meta = {
           title: m.title ?? '',
+          transKey: m.transKey ?? '',
           icon: m.icon ?? '',
           path: m.path ?? '',
           redirect: m.redirect ?? '',
@@ -424,6 +444,7 @@ const onSubmit = async () => {
       submitData.menuAction = {
         menuId: currentMenuId,
         label: form.action.label,
+        transKey: form.action.transKey || '',
         authValue: form.action.authValue,
         type: form.action.type,
         btnType: form.action.btnType,
@@ -438,6 +459,7 @@ const onSubmit = async () => {
       submitData.isLink = form.isLink === 1 ? 1 : 2;
       submitData.meta = {
         title: form.meta.title,
+        transKey: form.meta.transKey || '',
         icon: form.meta.icon,
         path: form.meta.path,
         redirect: form.meta.redirect,

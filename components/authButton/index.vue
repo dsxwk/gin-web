@@ -19,6 +19,7 @@
 <script setup name="authButton">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import { i18n } from '/@/static/i18n';
 import SvgIcon from '/@/components/svgIcon/index.vue';
 
 const props = defineProps({
@@ -52,7 +53,11 @@ const hasPermission = computed(() => {
   return btnList.some((item) => item.authValue === props.auth);
 });
 
-const label = computed(() => config.value?.label || '');
+const label = computed(() => {
+  const cfg = config.value;
+  if (!cfg) return '';
+  return i18n.global.t(cfg.transKey || cfg.label || '');
+});
 
 const btnType = computed(() => {
   const style = config.value?.btnStyle || 'primary';

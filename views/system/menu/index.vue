@@ -71,12 +71,14 @@ const state = reactive({
       {
         key: 'meta.title', colWidth: '140', title: '名称', isCheck: true,
         render: (scope) => {
-          // 功能节点（type=2）meta 为 null，取按钮 label；菜单节点取 i18n(meta.title)
+          // 功能节点取按钮label；菜单节点优先transKey其次title
           if (scope.row?.type === 2) {
-            return scope.row?.menuAction?.label || scope.row?.name || '';
+            const al = scope.row?.menuAction; return al?.transKey ? i18n.global.t(al.transKey) : (al?.label || scope.row?.name || '');
           }
-          return i18n.global.t(scope.row?.meta?.title || '');
-        }
+          const tk = scope.row?.meta?.transKey;
+          return i18n.global.t(tk || scope.row?.meta?.title || '');
+        },
+        search: {type: 'input', prop: 'meta.title', isSearch: true},
       },
       {
         key: 'sort', colWidth: '90', title: '排序', isCheck: true,
