@@ -166,7 +166,7 @@ npm run preview
 | `VITE_OPEN`         | 开发启动时自动打开浏览器            | `true`                       |
 
 ## 📋 版本记录
-> - 最新版本 [v2.0.6](version_history_zh.md#v206) 
+> - 最新版本 [v2.1.0](version_history_zh.md#v210) 
 > - [历史版本记录](version_history_zh.md)
 
 ## 🔗 后端

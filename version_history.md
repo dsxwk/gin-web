@@ -1,5 +1,9 @@
 ﻿# Version History
 
+## v2.1.0
+> - Optimize menu function
+> - Optimize dashboard function and page and complete related dashboard interface
+
 ## v2.0.6
 > - Exception handling adjustment
 > - List table width adjustment

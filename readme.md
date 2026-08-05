@@ -162,7 +162,7 @@ Configured via `.env.development`:
 | `VITE_OPEN`          | Auto-open browser on dev start       | `true`                   |
 
 ## 📋 Version History
-> - Latest Version [v2.0.6](version_history.md#v206) 
+> - Latest Version [v2.1.0](version_history.md#v210) 
 > - [Historical Version Records](version_history.md)
 
 ## 🔗 Backend
