@@ -17,6 +17,15 @@
 - [gin-admin (GitHub)](https://github.com/dsxwk/gin-admin.git)
 - [gin-admin (Gitee)](https://gitee.com/dsxwk/gin-admin.git)
 
+**预览截图**
+![image](public/images/Login_2026-08-07_16-38-36.png)
+![image](public/images/Home_2026-08-07_16-40-04.png)
+![image](public/images/Menu_2026-08-07_16-41-10.png)
+![image](public/images/User_2026-08-07_16-41-45.png)
+![image](public/images/Dept_2026-08-07_16-40-36.png)
+![image](public/images/Role_2026-08-10_11-34-01.png)
+![image](public/images/System_2026-08-10_11-34-26.png)
+
 ## ✨ 功能特性
 - **多布局模式** — 默认、经典、横向、分栏四种布局一键切换
 - **主题定制** — 主色切换、深色模式、导航栏渐变、灰色/色弱模式

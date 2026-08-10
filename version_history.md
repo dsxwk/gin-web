@@ -1,5 +1,9 @@
 ﻿# Version History
 
+## v2.1.1
+> - Added effect preview screenshot
+> - Added department and user department related functions, dashboard chart display adjustment
+
 ## v2.1.0
 > - Optimize menu function
 > - Optimize dashboard function and page and complete related dashboard interface
