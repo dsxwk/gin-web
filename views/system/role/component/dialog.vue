@@ -12,7 +12,7 @@
           }"
       >
         <template #roleUsers>
-          <div class="role-users-selector" @click="onOpenUserSelect" tabindex="0">
+          <div class="role-users-selector el-input" @click="onOpenUserSelect" tabindex="0">
             <div class="role-users-tags" v-if="state.ruleForm.userRoles.length">
               <el-tag
                 v-for="(user, idx) in visibleUsers"
@@ -174,7 +174,8 @@ const getFormData = computed(() => {
       type: 'input',
       attrs: {
         placeholder: '请输入角色名称',
-        clearable: true
+        clearable: true,
+        class: 'w100'
       },
       rules: [
         {
@@ -190,7 +191,8 @@ const getFormData = computed(() => {
       type: 'textarea',
       attrs: {
         placeholder: '请输入描述',
-        clearable: true
+        clearable: true,
+        class: 'w100'
       },
       rules: []
     },
@@ -204,7 +206,6 @@ const getFormData = computed(() => {
       label: '用户',
       prop: 'roleUsers',
       slot: 'roleUsers',
-      span: 24,
     },
     {
       label: '菜单功能',

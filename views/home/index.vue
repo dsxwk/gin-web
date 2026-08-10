@@ -440,7 +440,7 @@ function buildCostOption(counts) {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
     legend: { data: ['请求量', '平均耗时(ms)'], bottom: 0 },
     grid: { left: '3%', right: '4%', bottom: '18%', top: '10%' },
-    xAxis: { type: 'category', data: ['<50ms', '50-100ms', '100-200ms', '200-500ms', '>500ms'] },
+    xAxis: { type: 'category', data: ['<50ms', '50-100ms', '100-200ms', '200-500ms', '>500ms'], axisLabel: { interval: 0 } },
     yAxis: [{ type: 'value', name: '请求量', splitLine: { lineStyle: { type: 'dashed' } } }, { type: 'value', name: 'ms' }],
     series: [
       { name: '请求量', type: 'bar', yAxisIndex: 0, data: counts.map((v, i) => ({ value: v, itemStyle: { color: ['#409EFF','#67C23A','#E6A23C','#F56C6C','#909399'][i] } })), barWidth: '40%' },
@@ -518,7 +518,7 @@ const costChartOption = ref({
   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
   legend: { data: ['请求量', '平均耗时(ms)'], bottom: 0 },
   grid: { left: '3%', right: '4%', bottom: '18%', top: '10%' },
-  xAxis: { type: 'category', data: ['<50ms', '50-100ms', '100-200ms', '200-500ms', '>500ms'] },
+  xAxis: { type: 'category', data: ['<50ms', '50-100ms', '100-200ms', '200-500ms', '>500ms'], axisLabel: { interval: 0 } },
   yAxis: [
     { type: 'value', name: '请求量', splitLine: { lineStyle: { type: 'dashed' } } },
     { type: 'value', name: 'ms' },

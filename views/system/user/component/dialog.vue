@@ -1,6 +1,6 @@
 <template>
   <div class="system-menu-dialog-container">
-    <el-dialog :title="state.dialog.title" v-if="state.dialog.isShowDialog" v-model="state.dialog.isShowDialog" width="769px">
+    <el-dialog :title="state.dialog.title" v-if="state.dialog.isShowDialog" v-model="state.dialog.isShowDialog" width="800px">
       <ConfigForm
           ref="dialogFormRef"
           v-model:model="state.ruleForm"
@@ -22,8 +22,9 @@
   </div>
 </template>
 <script setup name="systemUserDialog">
-import {nextTick, reactive, ref} from 'vue';
+import {nextTick, reactive, ref, watch} from 'vue';
 import {userApi} from '/@/api/user';
+import {departmentApi} from '/@/api/department';
 import {ElMessage} from 'element-plus';
 import ConfigForm from '/@/components/form/index.vue';
 import {genderDict, statusDict} from '/@/dict/user';
@@ -38,9 +39,11 @@ const props = defineProps({
 const emit = defineEmits(['refresh']);
 const dialogFormRef = ref();
 const api = userApi();
+const deptApi = departmentApi();
 
 const state = reactive({
   roles: [],
+  departments: [], // 部门列表
   ruleForm: {
     fullName: '',
     avatar: '',
@@ -51,7 +54,9 @@ const state = reactive({
     gender: 1,
     age: 0,
     status: 1,
-    userRoles: []
+    userRoles: [],
+    mainDept: null,   // 主部门 departmentId
+    userDepts: [],    // 用户部门 departmentId 数组
   },
   dialog: {
     isShowDialog: false,
@@ -61,7 +66,61 @@ const state = reactive({
   }
 });
 
+// 监听主部门变化，同步到用户部门
+watch(() => state.ruleForm.mainDept, (newVal, oldVal) => {
+  // userDepts 可能为 null，统一转为数组
+  const raw = state.ruleForm.userDepts;
+  const userDepts = Array.isArray(raw) ? [...raw] : [];
+  if (!newVal) {
+    // 主部门被清除，仅移除旧的主部门，不改变用户选择的其他部门
+    if (oldVal && userDepts.includes(oldVal)) {
+      const idx = userDepts.indexOf(oldVal);
+      userDepts.splice(idx, 1);
+    }
+    state.ruleForm.userDepts = userDepts;
+    return;
+  }
+  // 主部门有值时，确保用户部门包含主部门
+  // 移除旧的主部门
+  if (oldVal && userDepts.includes(oldVal)) {
+    const idx = userDepts.indexOf(oldVal);
+    userDepts.splice(idx, 1);
+  }
+  // 添加新的主部门到最前面
+  if (!userDepts.includes(newVal)) {
+    userDepts.unshift(newVal);
+  }
+  state.ruleForm.userDepts = userDepts;
+});
+
+// 监听用户部门变化，防止移除主部门
+watch(() => state.ruleForm.userDepts, (newVal, oldVal) => {
+  const mainDept = state.ruleForm.mainDept;
+  if (!mainDept) return;
+  // 转为数组，防止 null/undefined
+  const arr = Array.isArray(newVal) ? newVal : [];
+  // 如果主部门被移除，自动加回
+  if (!arr.includes(mainDept)) {
+    // 有主部门时不允许清空
+    if (arr.length === 0) {
+      state.ruleForm.userDepts = [mainDept];
+      return;
+    }
+    state.ruleForm.userDepts = [mainDept, ...arr];
+  }
+});
+
 const getFormData = () => {
+  // 构建部门级联数据（与菜单上级选择相同模式）
+  const buildDeptCascader = (list) => {
+    if (!Array.isArray(list) || !list.length) return [];
+    return list.map(d => ({
+      value: d.id,
+      label: d.name,
+      children: d.children?.length ? buildDeptCascader(d.children) : undefined,
+    }));
+  };
+  const deptCascaderData = buildDeptCascader(state.departments || []);
   return [
     {
       label: '用户名',
@@ -90,7 +149,7 @@ const getFormData = () => {
       rules: [
         {
           required: true,
-          message: '请输入用姓名',
+          message: '请输入姓名',
           trigger: 'blur'
         }
       ]
@@ -109,6 +168,46 @@ const getFormData = () => {
         placeholder: '请输入头像地址',
         clearable: true
       }
+    },
+    {
+      label: '主部门',
+      prop: 'mainDept',
+      type: 'cascader',
+      options: deptCascaderData,
+      attrs: {
+        placeholder: '请选择主部门',
+        clearable: true,
+        filterable: true,
+        class: 'w100',
+        props: { checkStrictly: true, emitPath: false, value: 'value', label: 'label' },
+      },
+      rules: [
+        {
+          required: true,
+          message: '请选择主部门',
+          trigger: 'change'
+        }
+      ]
+    },
+    {
+      label: '用户部门',
+      prop: 'userDepts',
+      type: 'cascader',
+      options: deptCascaderData,
+      attrs: {
+        placeholder: '请选择用户部门',
+        clearable: true,
+        filterable: true,
+        class: 'w100',
+        props: { multiple: true, checkStrictly: true, emitPath: false, value: 'value', label: 'label' },
+      },
+      rules: [
+        {
+          required: true,
+          message: '请选择用户部门',
+          trigger: 'change'
+        }
+      ]
     },
     {
       label: '用户角色',
@@ -184,9 +283,16 @@ const getFormData = () => {
 };
 const rules = {};
 
+const loadDepartments = async () => {
+  try {
+    const res = await deptApi.list({page: 1, pageSize: 9999, notPage: true});
+    state.departments = res?.data?.list || [];
+  } catch (_) {}
+};
+
 const openDialog = async (type, row) => {
-  // 先加载角色下拉数据，保证弹窗打开时用户角色有可选项
-  await getRoles();
+  // 加载角色和部门数据
+  await Promise.all([getRoles(), loadDepartments()]);
   state.ruleForm = {
     fullName: '',
     avatar: '',
@@ -197,7 +303,9 @@ const openDialog = async (type, row) => {
     gender: 1,
     age: 0,
     status: 1,
-    userRoles: []
+    userRoles: [],
+    mainDept: null,
+    userDepts: [],
   };
   if (type === 'edit') {
     try {
@@ -207,6 +315,15 @@ const openDialog = async (type, row) => {
           state.ruleForm[key] = data[key];
         }
       });
+      // 解析部门数据
+      if (data.mainDept?.departmentId) {
+        state.ruleForm.mainDept = data.mainDept.departmentId;
+      }
+      if (Array.isArray(data.userDepts)) {
+        state.ruleForm.userDepts = data.userDepts.map(d => d.departmentId);
+      } else {
+        state.ruleForm.userDepts = [];
+      }
     } catch (e) {
       ElMessage.error('获取用户详情失败');
       return;
@@ -220,7 +337,6 @@ const openDialog = async (type, row) => {
   }
   state.dialog.type = type;
   state.dialog.isShowDialog = true;
-  // 清空表单，此项需加表单验证才能使用
   await nextTick(() => {
     dialogFormRef.value && dialogFormRef.value.resetFields();
   });
@@ -237,6 +353,20 @@ const onCancel = () => {
 const onSubmit = async () => {
   const submitData = { ...state.ruleForm };
   submitData.age = parseInt(submitData.age) || 0;
+
+  // 格式化主部门
+  if (submitData.mainDept) {
+    submitData.mainDept = { departmentId: submitData.mainDept };
+  } else {
+    delete submitData.mainDept;
+  }
+
+  // 格式化用户部门
+  if (Array.isArray(submitData.userDepts) && submitData.userDepts.length) {
+    submitData.userDepts = submitData.userDepts.map(deptId => ({ departmentId: deptId }));
+  } else {
+    submitData.userDepts = [];
+  }
 
   submitData.userRoles = submitData.userRoles?.map(roleId => {
     const role = state.roles.find(r => r.id === roleId);
@@ -274,7 +404,6 @@ const detail = async (id) => {
   const res = await api.detail({id: id});
   const data = res.data;
   data.userRoles = data.userRoles?.map(role => role.roleId) || [];
-
   return data;
 };
 
@@ -286,4 +415,7 @@ defineExpose({openDialog});
   display: flex;
   justify-content: flex-end;
 }
+
+
+
 </style>

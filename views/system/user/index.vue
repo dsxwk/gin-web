@@ -101,6 +101,16 @@ const state = reactive({
           return scope.row?.userRoles?.length > 0 ? scope.row?.userRoles.map(item => item.name).join(',') : '';
         }
       },
+      {key: 'mainDept', colWidth: '120', title: '主部门', isCheck: true,
+        render: (scope) => scope.row?.mainDept?.department?.name || scope.row?.mainDeptName || '',
+      },
+      {key: 'userDepts', colWidth: '150', title: '用户部门', isCheck: true,
+        render: (scope) => {
+          const depts = scope.row?.userDepts || [];
+          if (depts.length === 0) return '';
+          return depts.map((d) => d.department?.name || d.departmentName || '').filter(Boolean).join(',');
+        },
+      },
       {key: 'createdAt', colWidth: '120', title: '创建时间', type: 'text', isCheck: true, search: {type: 'daterange', rangeProp: ['createdAtStart', 'createdAtEnd'], isSearch: true}},
       {key: 'updatedAt', colWidth: '120', title: '更新时间', type: 'text', isCheck: true},
     ],
