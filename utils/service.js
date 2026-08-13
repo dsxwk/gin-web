@@ -27,6 +27,7 @@ export default function createService(module, headers = {}) {
             const config = {
                 method,
                 headers: dynamicHeaders,
+                loading: value.loading,
             };
             if (method.toUpperCase() === 'POST' || method.toUpperCase() === 'PUT') {
                 config.body = JSON.stringify(params);

@@ -8,7 +8,9 @@ const API_URL = import.meta.env.VITE_API_URL;
 // API_URL = 'http://127.0.0.1:8080/api/v1';
 
 export default async function request(path, config = {}) {
-    NextLoading.start();
+    if (config.loading !== false) {
+        NextLoading.start();
+    }
 
     try {
         let response = await fetch(API_URL + path, config);
