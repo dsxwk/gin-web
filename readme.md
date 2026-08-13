@@ -21,11 +21,15 @@ A modern enterprise admin management system built with **Vue 3 + Vite + Element 
 ![image](public/images/Dept_2026-08-07_16-40-36.png)
 ![image](public/images/Role_2026-08-10_11-34-01.png)
 ![image](public/images/System_2026-08-10_11-34-26.png)
+![image](public/images/Ai_assistant_2026-08-13_14-10-24_1.png)
+![image](public/images/Ai_assistant_2026-08-13_14-08-37_2.png)
+![image](public/images/Ai_assistant_2026-08-13_14-09-41_3.png)
 
 ## ✨ Features
 - **Layout Modes** — Default, Classic, Transverse, Columns layouts switchable on the fly
 - **Theme Customization** — Primary color, dark mode, gradient navbars, grayscale & color-blind modes
 - **Multi-language i18n** — Chinese (Simplified), Chinese (Traditional), English
+- **AI Assistant** — Intelligent query of backend data, document generation, permission control, etc
 - **Backend-controlled Routes** — Dynamic route generation from server-side permissions
 - **TagsView** — Tab-style page navigation with drag-and-drop, caching, and sharing
 - **Rich Components** — Article management, user/role/menu/dict/config CRUD with dialogs
@@ -171,7 +175,7 @@ Configured via `.env.development`:
 | `VITE_OPEN`          | Auto-open browser on dev start       | `true`                   |
 
 ## 📋 Version History
-> - Latest Version [v2.1.0](version_history.md#v210) 
+> - Latest Version [v2.1.2](version_history.md#v212) 
 > - [Historical Version Records](version_history.md)
 
 ## 🔗 Backend

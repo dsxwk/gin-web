@@ -25,11 +25,15 @@
 ![image](public/images/Dept_2026-08-07_16-40-36.png)
 ![image](public/images/Role_2026-08-10_11-34-01.png)
 ![image](public/images/System_2026-08-10_11-34-26.png)
+![image](public/images/Ai_assistant_2026-08-13_14-10-24_1.png)
+![image](public/images/Ai_assistant_2026-08-13_14-08-37_2.png)
+![image](public/images/Ai_assistant_2026-08-13_14-09-41_3.png)
 
 ## ✨ 功能特性
 - **多布局模式** — 默认、经典、横向、分栏四种布局一键切换
 - **主题定制** — 主色切换、深色模式、导航栏渐变、灰色/色弱模式
 - **多语言国际化** — 简体中文、繁体中文、英文
+- **AI智能助手** — 后台数据智能查询、文档生成、权限管控等
 - **后端控制路由** — 根据服务端权限动态生成路由菜单
 - **TagsView 标签页** — 支持拖拽排序、缓存、共享
 - **丰富业务组件** — 文章管理、用户/角色/菜单/字典/系统配置 CRUD 弹窗
@@ -175,7 +179,7 @@ npm run preview
 | `VITE_OPEN`         | 开发启动时自动打开浏览器            | `true`                       |
 
 ## 📋 版本记录
-> - 最新版本 [v2.1.0](version_history_zh.md#v210) 
+> - 最新版本 [v2.1.2](version_history_zh.md#v212) 
 > - [历史版本记录](version_history_zh.md)
 
 ## 🔗 后端

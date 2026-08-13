@@ -1,5 +1,9 @@
 ﻿# Version History
 
+## v2.1.2
+> - Add AI intelligent assistant
+> - Add preview screenshot and document update, version history
+
 ## v2.1.1
 > - Added effect preview screenshot
 > - Added department and user department related functions, dashboard chart display adjustment
