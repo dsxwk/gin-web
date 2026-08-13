@@ -28,3 +28,4 @@ dist-ssr
 /package-lock.json
 /.env.development
 /.env.production
+/.npm-cache
