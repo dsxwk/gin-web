@@ -199,7 +199,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, shallowRef, onMounted } from 'vue';
 import VChart from 'vue-echarts';
 import { formatDateTime } from '/@/utils/formatTime.js';
 import { operatorLogApi } from '/@/api/operatorLog';
@@ -209,7 +209,7 @@ import {
   TrendCharts, Notebook, DataAnalysis, List
 } from '@element-plus/icons-vue';
 
-const statCards = ref([
+const statCards = shallowRef([
   { title: '用户数', value: '1,286', desc: '较昨日 +12', trend: 1, icon: User, color: '#409EFF', bgColor: '#ecf5ff' },
   { title: '角色数', value: '18', desc: '较昨日 +0', trend: 0, icon: Setting, color: '#67C23A', bgColor: '#f0f9eb' },
   { title: '菜单数', value: '56', desc: '较昨日 +3', trend: 1, icon: Menu, color: '#E6A23C', bgColor: '#fdf6ec' },

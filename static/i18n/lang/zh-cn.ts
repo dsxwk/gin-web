@@ -7,6 +7,7 @@ export default {
 		systemRole: '角色管理',
 		systemUser: '用户管理',
 		systemDept: '部门管理',
+		systemNotification: '通知管理',
 		systemDic: '字典管理',
 		limits: '权限管理',
 		limitsFrontEnd: '前端控制',

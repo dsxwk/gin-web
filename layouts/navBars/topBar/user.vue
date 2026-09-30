@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="layout-navbars-breadcrumb-user pr15" :style="{ flex: layoutUserFlexNum }">
     <el-dropdown :show-timeout="70" :hide-timeout="50" trigger="click" @command="onComponentSizeChange">
       <div class="layout-navbars-breadcrumb-user-icon">
@@ -37,7 +37,7 @@
       <i class="icon-skin iconfont" :title="$t('message.user.title3')"></i>
     </div>
     <div class="layout-navbars-breadcrumb-user-icon" ref="userNewsBadgeRef" v-click-outside="onUserNewsClick">
-      <el-badge :is-dot="true">
+      <el-badge :value="unread" :max="99" :hidden="unread <= 0">
         <el-icon :title="$t('message.user.title4')">
           <ele-Bell />
         </el-icon>
@@ -50,7 +50,7 @@
         trigger="click"
         transition="el-zoom-in-top"
         virtual-triggering
-        :width="300"
+        :width="380"
         :persistent="false"
     >
       <UserNews />
@@ -92,6 +92,7 @@ import screenfull from 'screenfull';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useUserInfo } from '/@/stores/userInfo';
+import { useNotification } from '/@/stores/notification';
 import { useThemeConfig } from '/@/stores/themeConfig';
 import other from '/@/utils/other';
 import mittBus from '/@/utils/mitt';
@@ -108,8 +109,10 @@ const userNewsBadgeRef = ref();
 const { locale, t } = useI18n();
 const router = useRouter();
 const stores = useUserInfo();
+const storesNotification = useNotification();
 const storesThemeConfig = useThemeConfig();
 const { userInfos } = storeToRefs(stores);
+const { unread } = storeToRefs(storesNotification);
 const { themeConfig } = storeToRefs(storesThemeConfig);
 const searchRef = ref();
 const state = reactive({
@@ -174,9 +177,10 @@ const onHandleCommandClick = (path) => {
 				}
 			},
 		})
-			.then(async () => {
-				// 清除缓存/token等
-				Session.clear();
+            .then(async () => {
+                storesNotification.disconnect();
+                // 清除缓存/token等
+                Session.clear();
 				// 使用 reload 时，不需要调用 resetRoute() 重置路由
 				window.location.reload();
 			})
@@ -214,9 +218,10 @@ const initI18nOrSize = (value, attr) => {
 };
 // 页面加载时
 onMounted(() => {
-	if (Local.get('themeConfig')) {
-		initI18nOrSize('globalComponentSize', 'disabledSize');
-		initI18nOrSize('globalI18n', 'disabledI18n');
+    storesNotification.init();
+    if (Local.get('themeConfig')) {
+        initI18nOrSize('globalComponentSize', 'disabledSize');
+        initI18nOrSize('globalI18n', 'disabledI18n');
 	}
 });
 </script>

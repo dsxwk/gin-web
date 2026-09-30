@@ -7,6 +7,7 @@ export default {
 		systemRole: 'systemRole',
 		systemUser: 'systemUser',
 		systemDept: 'systemDept',
+		systemNotification: 'systemNotification',
 		systemDic: 'systemDic',
 		limits: 'limits',
 		limitsFrontEnd: 'FrontEnd',
