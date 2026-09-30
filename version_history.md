@@ -1,5 +1,8 @@
 ﻿# Version History
 
+## v2.1.3
+> - Add and improve the system notification bar and notification management
+
 ## v2.1.2
 > - Add AI intelligent assistant
 > - Add preview screenshot and document update, version history
