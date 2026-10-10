@@ -1,5 +1,10 @@
 ﻿# Version History
 
+## v2.1.4
+> - Added AI assistant streaming dialog support
+> - Remove the AI assistant conversation function
+> - Update the effect diagram of the AI assistant
+
 ## v2.1.3
 > - Add and improve the system notification bar and notification management
 
