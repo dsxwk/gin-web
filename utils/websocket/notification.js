@@ -1,4 +1,5 @@
 import {Session} from '/@/utils/storage';
+import {refreshToken} from '/@/utils/request';
 
 //通知WebSocket客户端
 
@@ -8,6 +9,8 @@ const requestTimeout = 12000;
 const reconnectDelay = 3000;
 //通知连接最大重试间隔
 const maxReconnectDelay = 30000;
+//凭证到期前提前刷新的时间(毫秒)
+const tokenRefreshLeeway = 60000;
 
 //构建通知WebSocket地址
 function buildSocketUrl() {
@@ -28,6 +31,28 @@ function buildSocketUrl() {
     return url.toString();
 }
 
+//解析JWT载荷
+function decodeTokenPayload(token) {
+    const parts = String(token || '').split('.');
+    if (parts.length < 2) return null;
+
+    let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) base64 += '=';
+
+    try {
+        return JSON.parse(window.atob(base64));
+    } catch {
+        return null;
+    }
+}
+
+//判断凭证是否已过期或即将过期
+function isTokenExpired(token) {
+    const payload = decodeTokenPayload(token);
+    if (!payload?.exp) return false;
+    return payload.exp * 1000 - tokenRefreshLeeway <= Date.now();
+}
+
 //通知WebSocket客户端
 class NotificationSocket {
     constructor() {
@@ -35,6 +60,12 @@ class NotificationSocket {
         this.reconnectTimer = null;
         this.reconnectAttempts = 0;
         this.shouldReconnect = false;
+        this.opened = false;
+        this.handshakeFailed = false;
+        this.preparing = false;
+        this.refreshing = null;
+        this.refreshError = null;
+        this.refreshedToken = '';
         this.listeners = new Map();
         this.pending = new Map();
         this.waiters = [];
@@ -50,7 +81,19 @@ class NotificationSocket {
             return false;
         }
         if (this.socket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(this.socket.readyState)) return true;
+        if (this.preparing) return true;
 
+        //凭证过期或握手被拒时先刷新凭证
+        if (this.needRefreshToken()) {
+            this.prepareAndConnect();
+            return true;
+        }
+
+        return this.openSocket();
+    }
+
+    //建立连接
+    openSocket() {
         let socket;
         try {
             socket = new WebSocket(buildSocketUrl());
@@ -64,9 +107,12 @@ class NotificationSocket {
         }
 
         this.lastError = null;
+        this.opened = false;
         this.socket = socket;
         socket.onopen = () => {
             this.lastError = null;
+            this.opened = true;
+            this.handshakeFailed = false;
             this.reconnectAttempts = 0;
             this.resolveWaiters();
             this.emit('status', true);
@@ -77,6 +123,8 @@ class NotificationSocket {
         };
         socket.onclose = () => {
             if (this.socket !== socket) return;
+            //未握手成功说明连接被拒绝,可能是凭证失效
+            if (!this.opened) this.handshakeFailed = true;
             this.socket = null;
             this.rejectWaiters(new Error('通知服务连接已关闭'));
             this.rejectAllPending(new Error('通知服务连接已关闭'));
@@ -84,6 +132,54 @@ class NotificationSocket {
             this.scheduleReconnect();
         };
         return true;
+    }
+
+    //判断是否需要先刷新凭证
+    needRefreshToken() {
+        const token = Session.get('token');
+        if (!token) return false;
+        if (isTokenExpired(token)) return true;
+        //握手失败且当前凭证还没刷新过时再尝试一次
+        return this.handshakeFailed && this.refreshedToken !== token;
+    }
+
+    //刷新凭证后建立连接
+    async prepareAndConnect() {
+        if (this.preparing) return;
+        this.preparing = true;
+        const refreshed = await this.refreshAccessToken();
+        this.preparing = false;
+
+        if (!refreshed) {
+            this.lastError = this.refreshError || new Error('登录已过期,请重新登录');
+            this.rejectWaiters(this.lastError);
+            this.emit('error', this.lastError);
+            this.emit('status', false);
+            this.scheduleReconnect();
+            return;
+        }
+
+        this.handshakeFailed = false;
+        if (this.shouldReconnect) this.openSocket();
+    }
+
+    //刷新access token(单飞,避免并发刷新)
+    refreshAccessToken() {
+        if (this.refreshing) return this.refreshing;
+        this.refreshing = (async () => {
+            try {
+                const token = await refreshToken();
+                this.refreshedToken = token || Session.get('token') || '';
+                this.refreshError = null;
+                return true;
+            } catch (error) {
+                this.refreshError = error;
+                return false;
+            } finally {
+                this.refreshing = null;
+            }
+        })();
+        return this.refreshing;
     }
 
     //主动关闭通知服务
@@ -99,6 +195,8 @@ class NotificationSocket {
             socket.close(1000, 'client close');
         }
         this.lastError = null;
+        this.opened = false;
+        this.handshakeFailed = false;
         this.rejectWaiters(new Error('通知服务已关闭'));
         this.rejectAllPending(new Error('通知服务已关闭'));
     }

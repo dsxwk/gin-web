@@ -89,7 +89,8 @@ export default async function request(path, config = {}) {
     }
 }
 
-async function refreshToken() {
+//刷新登录凭证
+export async function refreshToken() {
     const refreshToken = Session.get('refreshToken');
 
     if (!refreshToken) throw new Error('没有refreshToken');
