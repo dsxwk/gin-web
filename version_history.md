@@ -4,6 +4,7 @@
 > - Added AI assistant streaming dialog support
 > - Remove the AI assistant conversation function
 > - Update the effect diagram of the AI assistant
+> - Add automatic refresh of token when websocket token is invalid
 
 ## v2.1.3
 > - Add and improve the system notification bar and notification management
