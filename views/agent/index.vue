@@ -16,8 +16,19 @@
             :class="{ active: session.id === currentSessionId }"
             @click="onSelectSession(session)"
         >
-          <div class="agent-session-title">{{ session.title || '未命名会话' }}</div>
-          <div class="agent-session-meta">{{ formatTime(session.createdAt) }}</div>
+          <div class="agent-session-info">
+            <div class="agent-session-title">{{ session.title || '未命名会话' }}</div>
+            <div class="agent-session-meta">{{ formatTime(session.createdAt) }}</div>
+          </div>
+          <el-tooltip content="删除会话" placement="top">
+            <el-button
+                class="agent-session-delete"
+                link
+                :icon="Delete"
+                :disabled="loading"
+                @click.stop="onDeleteSession(session)"
+            />
+          </el-tooltip>
         </div>
         <div v-if="sessions.length === 0 && !sessionsLoading" class="agent-empty">暂无会话记录</div>
       </div>
@@ -27,6 +38,10 @@
     <div class="agent-main">
       <div class="agent-main-header">
         <span class="agent-main-title">{{ currentTitle }}</span>
+        <div class="agent-header-switch">
+          <span class="agent-switch-label">流式输出</span>
+          <el-switch v-model="streamMode" :disabled="loading" />
+        </div>
       </div>
       <div ref="messagesRef" class="agent-messages">
         <div v-if="messages.length === 0 && !loading" class="agent-welcome">
@@ -46,7 +61,7 @@
             <template v-else>{{ msg.content }}</template>
           </div>
         </div>
-        <div v-if="loading" class="agent-message assistant">
+        <div v-if="loading && !streaming" class="agent-message assistant">
           <div class="agent-message-avatar">AI</div>
           <div class="agent-message-content agent-thinking">等待AI助手回答, 已等待 {{ waitSeconds }} 秒</div>
         </div>
@@ -60,13 +75,15 @@
             resize="none"
             @keydown.enter.exact.prevent="onSend"
         />
-        <el-button
-            type="primary"
-            class="agent-send-btn"
-            :loading="loading"
-            :disabled="!inputText.trim()"
-            @click="onSend"
-        >发送</el-button>
+        <div class="agent-input-actions">
+          <el-button
+              type="primary"
+              class="agent-send-btn"
+              :loading="loading"
+              :disabled="!inputText.trim()"
+              @click="onSend"
+          >发送</el-button>
+        </div>
       </div>
     </div>
   </div>
@@ -74,9 +91,9 @@
 
 <script setup name="agentIndex">
 import {computed, nextTick, onBeforeUnmount, onMounted, ref} from 'vue';
-import {ElMessage} from 'element-plus';
-import {Plus} from '@element-plus/icons-vue';
-import {agentApi} from '/@/api/agent';
+import {ElMessage, ElMessageBox} from 'element-plus';
+import {Delete, Plus} from '@element-plus/icons-vue';
+import {agentApi, agentStream} from '/@/api/agent';
 import {renderMarkdown} from '/@/utils/markdown';
 
 const api = agentApi();
@@ -90,6 +107,12 @@ const loading = ref(false);
 const waitSeconds = ref(0);
 let waitTimer = null;
 const currentSessionId = ref(null);
+//流式输出开关
+const streamMode = ref(false);
+//是否已收到流式内容
+const streaming = ref(false);
+//流式请求控制器
+let streamController = null;
 
 // 当前会话标题
 const currentTitle = computed(() => {
@@ -122,6 +145,36 @@ const onSelectSession = async (session) => {
   if (currentSessionId.value === session.id) return;
   currentSessionId.value = session.id;
   await loadHistory(session.id);
+};
+
+// 删除会话
+const onDeleteSession = async (session) => {
+  try {
+    await ElMessageBox.confirm(
+        `确定删除会话「${session.title || '未命名会话'}」吗？删除后聊天记录不可恢复。`,
+        '删除会话',
+        {
+          type: 'warning',
+          confirmButtonText: '删除',
+          cancelButtonText: '取消',
+        }
+    );
+  } catch {
+    return;
+  }
+
+  try {
+    await api.deleteSession({id: session.id});
+    // 删除的是当前会话时清空聊天区
+    if (currentSessionId.value === session.id) {
+      currentSessionId.value = null;
+      messages.value = [];
+    }
+    ElMessage.success('删除成功');
+    await loadSessions();
+  } catch (e) {
+    ElMessage.error(e?.msg || '删除失败，请稍后重试');
+  }
 };
 
 // 加载聊天记录
@@ -160,6 +213,7 @@ const onSend = async () => {
 
   inputText.value = '';
   loading.value = true;
+  streaming.value = false;
   startWaitTimer();
 
   messages.value.push({
@@ -170,32 +224,90 @@ const onSend = async () => {
   scrollToBottom();
 
   try {
-    const params = {question};
-    if (currentSessionId.value) {
-      params.sessionId = currentSessionId.value;
+    if (streamMode.value) {
+      await sendByStream(question);
+    } else {
+      await sendByAsk(question);
     }
-
-    const res = await api.ask(params);
-    const data = res?.data || {};
-
-    // 新会话：更新会话id并刷新会话列表
-    if (data.sessionId && data.sessionId !== currentSessionId.value) {
-      currentSessionId.value = data.sessionId;
-      await loadSessions();
-    }
-
-    messages.value.push({
-      tempId: `assistant-${Date.now()}`,
-      role: 'assistant',
-      content: data.answer || '',
-    });
   } catch (e) {
-    ElMessage.error('发送失败，请稍后重试');
+    //忽略主动取消
+    if (e?.name !== 'AbortError') {
+      ElMessage.error(e?.msg || (streamMode.value ? '流式发送失败，请稍后重试' : '发送失败，请稍后重试'));
+    }
   } finally {
     stopWaitTimer();
     loading.value = false;
+    streaming.value = false;
+    streamController = null;
     scrollToBottom();
   }
+};
+
+// 普通对话，调用ask接口
+const sendByAsk = async (question) => {
+  const params = {question};
+  if (currentSessionId.value) {
+    params.sessionId = currentSessionId.value;
+  }
+
+  const res = await api.ask(params);
+  const data = res?.data || {};
+
+  // 新会话：更新会话id并刷新会话列表
+  if (data.sessionId && data.sessionId !== currentSessionId.value) {
+    currentSessionId.value = data.sessionId;
+    await loadSessions();
+  }
+
+  messages.value.push({
+    tempId: `assistant-${Date.now()}`,
+    role: 'assistant',
+    content: data.answer || '',
+  });
+};
+
+// 流式对话，调用stream接口
+const sendByStream = async (question) => {
+  const params = {question};
+  if (currentSessionId.value) {
+    params.sessionId = currentSessionId.value;
+  }
+
+  let index = -1;
+  streamController = new AbortController();
+
+  // 收到首个内容块时创建助手消息
+  const ensureMessage = () => {
+    if (index !== -1) return;
+    messages.value.push({
+      tempId: `assistant-${Date.now()}`,
+      role: 'assistant',
+      content: '',
+    });
+    index = messages.value.length - 1;
+  };
+
+  await agentStream(params, {
+    signal: streamController.signal,
+    onMessage: (content) => {
+      ensureMessage();
+      streaming.value = true;
+      messages.value[index].content += content;
+      scrollToBottom();
+    },
+    onDone: async (data) => {
+      ensureMessage();
+      if (data?.answer) {
+        messages.value[index].content = data.answer;
+      }
+      // 新会话：更新会话id并刷新会话列表
+      if (data?.sessionId && data.sessionId !== currentSessionId.value) {
+        currentSessionId.value = data.sessionId;
+        await loadSessions();
+      }
+      scrollToBottom();
+    },
+  });
 };
 
 // 滚动到底部
@@ -224,6 +336,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stopWaitTimer();
+  if (streamController) {
+    streamController.abort();
+    streamController = null;
+  }
 });
 </script>
 
@@ -264,11 +380,30 @@ onBeforeUnmount(() => {
 }
 
 .agent-session-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 12px;
   border-radius: 6px;
   cursor: pointer;
   margin-bottom: 4px;
   transition: background 0.2s;
+}
+
+.agent-session-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.agent-session-delete {
+  flex-shrink: 0;
+  height: auto;
+  padding: 0;
+  color: var(--el-text-color-secondary);
+}
+
+.agent-session-delete:hover {
+  color: var(--el-color-danger);
 }
 
 .agent-session-item:hover {
@@ -309,6 +444,10 @@ onBeforeUnmount(() => {
 }
 
 .agent-main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 14px 20px;
   border-bottom: 1px solid var(--el-border-color);
 }
@@ -317,6 +456,21 @@ onBeforeUnmount(() => {
   font-size: 16px;
   font-weight: 600;
   color: var(--el-text-color-primary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.agent-header-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.agent-switch-label {
+  font-size: 13px;
+  color: var(--el-text-color-regular);
 }
 
 .agent-messages {
@@ -501,17 +655,26 @@ onBeforeUnmount(() => {
 /* 输入区 */
 .agent-input {
   display: flex;
+  flex-direction: column;
   gap: 10px;
-  align-items: flex-end;
   padding: 14px 20px;
   border-top: 1px solid var(--el-border-color);
 }
 
-.agent-input :deep(.el-textarea) {
-  flex: 1;
+.agent-input :deep(.el-textarea__inner) {
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.6;
+}
+
+.agent-input-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .agent-send-btn {
-  height: 40px;
+  min-width: 64px;
+  height: 32px;
+  padding: 0 16px;
 }
 </style>
