@@ -25,9 +25,8 @@
 ![image](public/images/Dept_2026-08-07_16-40-36.png)
 ![image](public/images/Role_2026-08-10_11-34-01.png)
 ![image](public/images/System_2026-08-10_11-34-26.png)
-![image](public/images/Ai_assistant_2026-08-13_14-10-24_1.png)
-![image](public/images/Ai_assistant_2026-08-13_14-08-37_2.png)
-![image](public/images/Ai_assistant_2026-08-13_14-09-41_3.png)
+![image](public/images/AI_ASSISTANT_1.png)
+![image](public/images/AI_ASSISTANT_2.png)
 
 ## ✨ 功能特性
 - **多布局模式** — 默认、经典、横向、分栏四种布局一键切换

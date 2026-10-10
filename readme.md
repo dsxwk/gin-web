@@ -21,9 +21,8 @@ A modern enterprise admin management system built with **Vue 3 + Vite + Element 
 ![image](public/images/Dept_2026-08-07_16-40-36.png)
 ![image](public/images/Role_2026-08-10_11-34-01.png)
 ![image](public/images/System_2026-08-10_11-34-26.png)
-![image](public/images/Ai_assistant_2026-08-13_14-10-24_1.png)
-![image](public/images/Ai_assistant_2026-08-13_14-08-37_2.png)
-![image](public/images/Ai_assistant_2026-08-13_14-09-41_3.png)
+![image](public/images/AI_ASSISTANT_1.png)
+![image](public/images/AI_ASSISTANT_2.png)
 
 ## ✨ Features
 - **Layout Modes** — Default, Classic, Transverse, Columns layouts switchable on the fly
