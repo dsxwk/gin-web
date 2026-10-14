@@ -1,5 +1,10 @@
 ﻿# Version History
 
+## v2.1.5
+> - Fix form validation issues
+> - Directory structure and route adjustment
+> - Update of preview effect diagram
+
 ## v2.1.4
 > - Added AI assistant streaming dialog support
 > - Remove the AI assistant conversation function
