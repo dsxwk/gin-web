@@ -13,16 +13,16 @@
       >
         <template #tools>
           <div class="table-tool">
-            <AuthButton auth="sys.dept.add" @click="onOpenAddDept('add')"/>
+            <AuthButton auth="dept.add" @click="onOpenAddDept('add')"/>
           </div>
         </template>
         <template #operation="{row}">
-          <div class="flex items-center" v-auths="['sys.dept.edit','sys.dept.add','sys.dept.del']">
-            <AuthButton auth="sys.dept.edit" @click="onOpenEditDept('edit', row)"/>
-            <AuthButton auth="sys.dept.addChildren" @click="onOpenAddDept('add', row)"/>
+          <div class="flex items-center" v-auths="['dept.edit','dept.add','dept.del']">
+            <AuthButton auth="dept.edit" @click="onOpenEditDept('edit', row)"/>
+            <AuthButton auth="dept.addChildren" @click="onOpenAddDept('add', row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onTableDelRow(row)">
               <template #reference>
-                <AuthButton auth="sys.dept.del"/>
+                <AuthButton auth="dept.del"/>
               </template>
             </el-popconfirm>
           </div>

@@ -13,18 +13,18 @@
       >
         <template #tools>
           <div class="table-tool">
-            <AuthButton auth="sys.user.add" @click="onOpenAddUser('add')"/>
-            <AuthButton auth="sys.user.import" @click="onOpenImport"/>
-            <AuthButton auth="sys.user.batchDel" @click="batchDelete"/>
+            <AuthButton auth="user.add" @click="onOpenAddUser('add')"/>
+            <AuthButton auth="user.import" @click="onOpenImport"/>
+            <AuthButton auth="user.batchDel" @click="batchDelete"/>
           </div>
         </template>
         <template #operation="{row}">
           <div class="flex items-center">
-            <AuthButton auth="sys.user.edit" :disabled="row.id === 1" @click="onOpenEditUser('edit', row)"/>
-            <AuthButton auth="sys.user.password" :disabled="row.id === 1" @click="onOpenPassword(row)"/>
+            <AuthButton auth="user.edit" :disabled="row.id === 1" @click="onOpenEditUser('edit', row)"/>
+            <AuthButton auth="user.password" :disabled="row.id === 1" @click="onOpenPassword(row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onTableDelRow(row)">
               <template #reference>
-                <AuthButton auth="sys.user.del" :disabled="row.id === 1"/>
+                <AuthButton auth="user.del" :disabled="row.id === 1"/>
               </template>
             </el-popconfirm>
           </div>

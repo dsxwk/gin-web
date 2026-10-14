@@ -7,21 +7,21 @@
         width="1000px"
     >
       <div class="import-toolbar">
-        <AuthButton auth="sys.user.importRecords" @click="openRecords"/>
+        <AuthButton auth="user.importRecords" @click="openRecords"/>
         <el-upload
             :auto-upload="false"
             :show-file-list="false"
             accept=".xlsx,.xls"
             :on-change="onFileChange"
         >
-          <el-button size="default" v-auth="'sys.user.import'" type="primary">
+          <el-button size="default" v-auth="'user.import'" type="primary">
             <el-icon>
               <ele-Upload/>
             </el-icon>
             选择Excel文件
           </el-button>
         </el-upload>
-        <el-button size="default" v-auth="'sys.user.import'" type="success" plain @click="downloadTemplate">
+        <el-button size="default" v-auth="'user.import'" type="success" plain @click="downloadTemplate">
           <el-icon>
             <ele-Download/>
           </el-icon>
@@ -61,12 +61,12 @@
         <el-table-column label="操作" width="170" fixed="right" align="center">
           <template #default="{row, $index}">
             <template v-if="row._editing">
-              <el-button v-auth="'sys.user.import'" size="small" type="success" @click="onRowSave(row)">保存</el-button>
-              <el-button v-auth="'sys.user.import'" size="small" @click="onRowCancel(row)">取消</el-button>
+              <el-button v-auth="'user.import'" size="small" type="success" @click="onRowSave(row)">保存</el-button>
+              <el-button v-auth="'user.import'" size="small" @click="onRowCancel(row)">取消</el-button>
             </template>
             <template v-else>
-              <el-button v-auth="'sys.user.import'" size="small" type="primary" @click="onRowEdit(row)">编辑</el-button>
-              <el-button v-auth="'sys.user.import'" size="small" type="danger" @click="onRowDelete($index)">删除</el-button>
+              <el-button v-auth="'user.import'" size="small" type="primary" @click="onRowEdit(row)">编辑</el-button>
+              <el-button v-auth="'user.import'" size="small" type="danger" @click="onRowDelete($index)">删除</el-button>
             </template>
           </template>
         </el-table-column>
@@ -75,8 +75,8 @@
 
       <template #footer>
         <span class="dialog-footer">
-          <el-button v-auth="'sys.user.import'" size="default" @click="onCancel">取 消</el-button>
-          <el-button v-auth="'sys.user.import'" size="default" type="primary" :loading="state.submitting" @click="onSubmit">导 入</el-button>
+          <el-button v-auth="'user.import'" size="default" @click="onCancel">取 消</el-button>
+          <el-button v-auth="'user.import'" size="default" type="primary" :loading="state.submitting" @click="onSubmit">导 入</el-button>
         </span>
       </template>
     </el-dialog>
@@ -102,10 +102,10 @@
         <el-table-column prop="createdAt" label="导入时间" min-width="170"/>
         <el-table-column label="操作" width="160" fixed="right" align="center">
           <template #default="{row}">
-            <AuthButton auth="sys.user.importRecords.detail" @click="onOpenRecordsDetail(row)"/>
+            <AuthButton auth="user.importRecords.detail" @click="onOpenRecordsDetail(row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onRecordsDelete(row)">
               <template #reference>
-                <AuthButton auth="sys.user.importRecords.delete"/>
+                <AuthButton auth="user.importRecords.delete"/>
               </template>
             </el-popconfirm>
           </template>

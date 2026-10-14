@@ -13,15 +13,15 @@
       >
         <template #tools>
           <div class="table-tool">
-            <AuthButton auth="sys.operatorLog.batchDel" @click="batchDelete"/>
+            <AuthButton auth="operatorLog.batchDel" @click="batchDelete"/>
           </div>
         </template>
         <template #operation="{row}">
           <div class="flex items-center">
-            <AuthButton auth="sys.operatorLog.detail" @click="onOpenDetail(row)"/>
+            <AuthButton auth="operatorLog.detail" @click="onOpenDetail(row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onTableDelRow(row)">
               <template #reference>
-                <AuthButton auth="sys.operatorLog.del"/>
+                <AuthButton auth="operatorLog.del"/>
               </template>
             </el-popconfirm>
           </div>

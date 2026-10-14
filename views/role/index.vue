@@ -13,15 +13,15 @@
       >
         <template #tools>
           <div class="table-tool">
-            <AuthButton auth="sys.role.add" @click="onOpenAddRole('add')"/>
+            <AuthButton auth="role.add" @click="onOpenAddRole('add')"/>
           </div>
         </template>
         <template #operation="{row}">
           <div class="flex items-center">
-            <AuthButton auth="sys.role.edit" @click="onOpenEditRole('edit', row)"/>
+            <AuthButton auth="role.edit" @click="onOpenEditRole('edit', row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onTableDelRow(row)">
               <template #reference>
-                <AuthButton auth="sys.role.del" :disabled="row.id === 1"/>
+                <AuthButton auth="role.del" :disabled="row.id === 1"/>
               </template>
             </el-popconfirm>
           </div>

@@ -14,16 +14,16 @@
       >
         <template #tools>
           <div class="table-tool">
-            <AuthButton auth="sys.dic.add" @click="onOpenAddDict('add')"/>
+            <AuthButton auth="dic.add" @click="onOpenAddDict('add')"/>
           </div>
         </template>
         <template #operation="{row}">
           <div class="flex items-center">
-            <AuthButton auth="sys.dic.edit" @click="onOpenEditDict('edit', row)"/>
-            <AuthButton auth="sys.dic.addChildren" @click="onOpenAddSubDict(row)"/>
+            <AuthButton auth="dic.edit" @click="onOpenEditDict('edit', row)"/>
+            <AuthButton auth="dic.addChildren" @click="onOpenAddSubDict(row)"/>
             <el-popconfirm title="确定删除吗？" @confirm="onTableDelRow(row)">
               <template #reference>
-                <AuthButton auth="sys.dic.del"/>
+                <AuthButton auth="dic.del"/>
               </template>
             </el-popconfirm>
           </div>

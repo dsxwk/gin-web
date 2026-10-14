@@ -10,7 +10,7 @@
             >
                 <template #tools>
                     <div class="table-tool">
-                        <AuthButton auth="notification.send" :loading="state.sendLoading" @click="onOpenSend"/>
+                        <AuthButton auth="sys.notification.send" :loading="state.sendLoading" @click="onOpenSend"/>
                     </div>
                 </template>
                 <template #operation="{row}">
@@ -22,10 +22,10 @@
                                 @confirm="onRevoke(row)"
                             >
                                 <template #reference>
-                                    <AuthButton auth="notification.revoke"/>
+                                    <AuthButton auth="sys.notification.revoke"/>
                                 </template>
                             </el-popconfirm>
-                            <AuthButton v-else auth="notification.revoke" @click="onRevoke(row)"/>
+                            <AuthButton v-else auth="sys.notification.revoke" @click="onRevoke(row)"/>
                         </template>
                     </div>
                 </template>
