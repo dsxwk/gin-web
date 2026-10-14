@@ -1,6 +1,6 @@
 <script setup>
 import {computed, defineAsyncComponent, ref} from 'vue';
-import {cloneDeep, get, set} from 'lodash-es';
+import {get, set} from 'lodash-es';
 
 const IconSelector = defineAsyncComponent(() => import('/@/components/iconSelector/index.vue'));
 const Editor = defineAsyncComponent(() => import('/@/components/wangEditor/index.vue'));
@@ -69,9 +69,9 @@ props.formConfig.forEach((item) => {
         return get(props.model, item.prop);
       },
       set(val) {
-        const cloneData = cloneDeep(props.model);
-        set(cloneData, decodeField(item.prop), val)
-        emit('update:model',cloneData);
+        //直接写入原对象,保持引用稳定避免表单校验读到替换前的旧值
+        set(props.model, decodeField(item.prop), val)
+        emit('update:model', props.model);
       },
     });
   }
