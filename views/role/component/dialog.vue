@@ -87,7 +87,7 @@
     <UserSelectDialog ref="userSelectDialogRef" @confirm="onUserSelectConfirm"/>
   </div>
 </template>
-<script setup name="systemRoleDialog">
+<script setup name="roleDialog">
 import {computed, nextTick, onMounted, reactive, ref} from 'vue';
 import {roleApi} from '/@/api/role';
 import {menuApi} from '/@/api/menu';
@@ -97,7 +97,7 @@ import {i18n} from '/@/static/i18n';
 import ConfigForm from '/@/components/form/index.vue';
 import {statusDict} from '/@/dict/role';
 import {ArrowDown} from '@element-plus/icons-vue';
-import UserSelectDialog from '/@/views/system/role/component/userSelectDialog.vue';
+import UserSelectDialog from '/@/views/role/component/userSelectDialog.vue';
 
 const props = defineProps({
   row: {

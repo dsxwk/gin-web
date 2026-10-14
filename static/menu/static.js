@@ -74,10 +74,10 @@ export const menuJson = {
                     "title": "菜单管理"
                 },
                 {
-                    "path": "/system/role",
-                    "name": "systemRole",
+                    "path": "/role",
+                    "name": "role",
                     "meta": {
-                        "title": "message.router.systemRole",
+                        "title": "message.router.role",
                         "isLink": "",
                         "isHide": false,
                         "isKeepAlive": true,
@@ -91,10 +91,10 @@ export const menuJson = {
                     "title": "角色管理"
                 },
                 {
-                    "path": "/system/user",
-                    "name": "systemUser",
+                    "path": "/user",
+                    "name": "user",
                     "meta": {
-                        "title": "message.router.systemUser",
+                        "title": "message.router.user",
                         "isLink": "",
                         "isHide": false,
                         "isKeepAlive": true,
@@ -108,10 +108,10 @@ export const menuJson = {
                     "title": "用户管理"
                 },
                 {
-                    "path": "/system/dept",
-                    "name": "systemDept",
+                    "path": "/dept",
+                    "name": "dept",
                     "meta": {
-                        "title": "message.router.systemDept",
+                        "title": "message.router.dept",
                         "isLink": "",
                         "isHide": false,
                         "isKeepAlive": true,
@@ -125,10 +125,10 @@ export const menuJson = {
                     "title": "部门管理"
                 },
                 {
-                    "path": "/system/dic",
-                    "name": "systemDic",
+                    "path": "/dic",
+                    "name": "dic",
                     "meta": {
-                        "title": "message.router.systemDic",
+                        "title": "message.router.dic",
                         "isLink": "",
                         "isHide": false,
                         "isKeepAlive": true,

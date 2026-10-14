@@ -50,7 +50,7 @@ import {ElMessage} from 'element-plus';
 import ConfigForm from '/@/components/form/index.vue';
 import {ArrowDown} from '@element-plus/icons-vue';
 import {statusDict} from '/@/dict/department';
-import UserSelectDialog from '/@/views/system/role/component/userSelectDialog.vue';
+import UserSelectDialog from '/@/views/role/component/userSelectDialog.vue';
 
 const props = defineProps({
   deptData: {

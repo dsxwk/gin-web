@@ -21,7 +21,7 @@
     </el-dialog>
   </div>
 </template>
-<script setup name="systemUserDialog">
+<script setup name="userDialog">
 import {nextTick, reactive, ref, watch} from 'vue';
 import {userApi} from '/@/api/user';
 import {departmentApi} from '/@/api/department';

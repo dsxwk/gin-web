@@ -36,7 +36,7 @@
   </div>
 </template>
 
-<script setup name="systemDict">
+<script setup name="dict">
 import {defineAsyncComponent, h, onMounted, reactive, ref} from 'vue';
 import {ElMessage} from 'element-plus';
 import {dictApi} from '/@/api/dict';
@@ -44,7 +44,7 @@ import {withTableLoading} from '/@/utils/commonFunction';
 
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
-const DictDialog = defineAsyncComponent(() => import('/@/views/system/dic/component/dialog.vue'));
+const DictDialog = defineAsyncComponent(() => import('/@/views/dic/component/dialog.vue'));
 import AuthButton from '/@/components/authButton/index.vue';
 
 const api = dictApi();

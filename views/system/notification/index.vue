@@ -128,7 +128,7 @@ import {useUserInfo} from '/@/stores/userInfo';
 //引入组件
 import AuthButton from '/@/components/authButton/index.vue';
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
-const UserSelectDialog = defineAsyncComponent(() => import('/@/views/system/role/component/userSelectDialog.vue'));
+const UserSelectDialog = defineAsyncComponent(() => import('/@/views/role/component/userSelectDialog.vue'));
 
 //定义变量内容
 const departmentApiService = departmentApi();

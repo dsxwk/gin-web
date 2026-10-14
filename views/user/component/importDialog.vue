@@ -119,7 +119,7 @@
  </div>
 </template>
 
-<script setup name="systemUserImportDialog">
+<script setup name="userImportDialog">
 import {reactive, defineAsyncComponent, ref} from 'vue';
 import {useRouter} from 'vue-router';
 import {ElMessage} from 'element-plus';
@@ -130,7 +130,7 @@ import {genderDict, statusDict} from '/@/dict/user';
 import {typeDict} from '/@/dict/importRecords';
 import {getDict} from '/@/utils/dict.js';
 import AuthButton from '/@/components/authButton/index.vue';
-const ImportDetailDialog = defineAsyncComponent(() => import('/@/views/system/user/component/importDetailDialog.vue'));
+const ImportDetailDialog = defineAsyncComponent(() => import('/@/views/user/component/importDetailDialog.vue'));
 
 const emit = defineEmits(['refresh']);
 const router = useRouter();

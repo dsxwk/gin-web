@@ -34,7 +34,7 @@
     </div>
   </div>
 </template>
-<script setup name="systemRole">
+<script setup name="role">
 import {defineAsyncComponent, h, reactive, ref, onMounted} from 'vue';
 import {ElMessage, ElMessageBox} from 'element-plus';
 import {roleApi} from '/@/api/role';
@@ -44,8 +44,8 @@ import {withTableLoading} from '/@/utils/commonFunction';
 
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
-const RoleDialog = defineAsyncComponent(() => import('/@/views/system/role/component/dialog.vue'));
-const UserDialog = defineAsyncComponent(() => import('/@/views/system/role/component/userDialog.vue'));
+const RoleDialog = defineAsyncComponent(() => import('/@/views/role/component/dialog.vue'));
+const UserDialog = defineAsyncComponent(() => import('/@/views/role/component/userDialog.vue'));
 import AuthButton from '/@/components/authButton/index.vue';
 
 const api = roleApi();

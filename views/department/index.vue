@@ -45,7 +45,7 @@ import {withTableLoading} from '/@/utils/commonFunction';
 
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
-const DeptDialog = defineAsyncComponent(() => import('/@/views/system/department/component/dialog.vue'));
+const DeptDialog = defineAsyncComponent(() => import('/@/views/department/component/dialog.vue'));
 import AuthButton from '/@/components/authButton/index.vue';
 
 const api = departmentApi();

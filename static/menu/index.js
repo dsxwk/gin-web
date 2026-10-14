@@ -84,11 +84,11 @@ export const menuJson = {
                 {
                     "id": 4,
                     "pid": 0,
-                    "path": "/system/user",
-                    "name": "systemUser",
-                    "component": "system/user/index",
+                    "path": "/user",
+                    "name": "user",
+                    "component": "user/index",
                     "meta": {
-                        "title": "message.router.systemUser",
+                        "title": "message.router.user",
                         "isLink": "",
                         "isHide": false,
                         "isKeepAlive": true,
@@ -105,11 +105,11 @@ export const menuJson = {
                 {
                     "id": 5,
                     "pid": 0,
-                    "path": "/system/role",
-                    "name": "systemRole",
-                    "component": "system/role/index",
+                    "path": "/role",
+                    "name": "role",
+                    "component": "role/index",
                     "meta": {
-                        "title": "message.router.systemRole",
+                        "title": "message.router.role",
                         "isLink": "",
                         "isHide": false,
                         "isKeepAlive": true,
@@ -124,11 +124,11 @@ export const menuJson = {
                 {
                     "id": 6,
                     "pid": 0,
-                    "path": "/system/dic",
-                    "name": "systemDic",
-                    "component": "system/dic/index",
+                    "path": "/dic",
+                    "name": "dic",
+                    "component": "dic/index",
                     "meta": {
-                        "title": "message.router.systemDic",
+                        "title": "message.router.dic",
                         "isLink":"",
                         "isHide": false,
                         "isKeepAlive": true,

@@ -32,7 +32,7 @@
 	</div>
 </template>
 
-<script setup name="systemDictDialog">
+<script setup name="dictDialog">
 import {reactive, ref, markRaw, nextTick, computed, watch} from 'vue';
 import {ElMessage} from 'element-plus';
 import {dictApi} from '/@/api/dict';

@@ -48,7 +48,7 @@
     </div>
   </div>
 </template>
-<script setup name="systemUser">
+<script setup name="user">
 import {defineAsyncComponent, reactive, ref, onMounted, h} from 'vue';
 import {ElMessage, ElMessageBox} from 'element-plus';
 import {userApi} from '/@/api/user';
@@ -58,8 +58,8 @@ import {withTableLoading} from '/@/utils/commonFunction';
 
 // 引入组件
 const Table = defineAsyncComponent(() => import('/@/components/table/index.vue'));
-const UserDialog = defineAsyncComponent(() => import('/@/views/system/user/component/dialog.vue'));
-const UserImportDialog = defineAsyncComponent(() => import('/@/views/system/user/component/importDialog.vue'));
+const UserDialog = defineAsyncComponent(() => import('/@/views/user/component/dialog.vue'));
+const UserImportDialog = defineAsyncComponent(() => import('/@/views/user/component/importDialog.vue'));
 import AuthButton from '/@/components/authButton/index.vue';
 
 const api = userApi();
